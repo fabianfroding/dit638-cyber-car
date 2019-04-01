@@ -1,27 +1,34 @@
 # --- Template START ---
 # --------------------[subject]
 #subject of change: <summary of change. not more than 10 words.>
-#Example: "Subject: Updated Git Commit Template"
-#[Enter Below]
+#Example: "Updated Git Commit Template"
+#--[Enter Below]--
 Subject: 
+
+
 # --------------------[id]
 #story card id: <id to the story.>
-#Example: "ID: <xyz>"
-#[Enter Below]
-ID:
+#Example: "<xyz>"
+#--[Enter Below]--
+ID: 
+
+
 # --------------------[how]
 #what did you do in the change: <short description of how you did the change. not more than 50 words.>
-#Example: "How: updated the commit template in config/.gitmessage to have an ID section"
-#[Enter Below]
-How:
+#Example: "updated the commit template in config/.gitmessage to have an ID section"
+#--[Enter Below]--
+How: 
+
+
 # --------------------[why]
 #reason for change: <short description of why you had to make change. not more than 50 words.>
-#Example: "Why: The previous template did not have a story id"
-#[Enter Below]
-Why:
-#
+#Example: "The previous template did not have a story id"
+#--[Enter Below]--
+Why: 
+
+
 # --- Template END ---
-# --------------------
+# --- [Reminder] ---
 # Remember to:
 #   * Capitalize the subject line
 #   * Use the imperative mood in the subject line
@@ -29,7 +36,6 @@ Why:
 #   * Separate subject from body with a blank line
 #   * Use the body to explain what and why vs. how
 #   * Can use multiple lines with "-" or "*" for bullet points in body
-# --------------------
 # --- COMMIT END ---
 # Tag can be 
 #    feat     (new feature)

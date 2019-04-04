@@ -10,8 +10,6 @@
 - Dev branch should be reviewed before merging to master
 - Pull requests (PR) into Dev branch must be reviewed by someone other than the person who made the PR
 
-## Naming conventions
-
 **Roles:**
 
 1. Customer = Christian Berger

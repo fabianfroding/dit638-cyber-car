@@ -63,8 +63,9 @@ int32_t main(int32_t argc, char **argv)
             while (od4.isRunning())
             {
                 cv::Mat img, frame_HSV;
-                int low_h = 94, low_s = 46, low_v = 50;
-                int high_h = 94, high_s = 41, high_v = 67;
+                int low_H = 94, low_S = 46, low_V = 50;
+                int high_H = 94, high_S = 41, high_V = 67;
+                int COLOR_BGR2HSV = 40; //some value that is used to convert RGB to HSV (https://docs.opencv.org/3.4.3/d7/d1b/group__imgproc__misc.html#gga4e0972be5de079fed4e3a10e24ef5ef0aa4a7f0ecf2e94150699e48c79139ee12)
 
                 // Wait for a notification of a new frame.
                 sharedMemory->wait();

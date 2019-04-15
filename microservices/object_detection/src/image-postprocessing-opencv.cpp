@@ -26,13 +26,15 @@
 #include <memory>
 #include <mutex>
 
-int32_t main(int32_t argc, char **argv) {
+int32_t main(int32_t argc, char **argv)
+{
     int32_t retCode{1};
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if ( (0 == commandlineArguments.count("cid")) ||
-         (0 == commandlineArguments.count("name")) ||
-         (0 == commandlineArguments.count("width")) ||
-         (0 == commandlineArguments.count("height")) ) {
+    if ((0 == commandlineArguments.count("cid")) ||
+        (0 == commandlineArguments.count("name")) ||
+        (0 == commandlineArguments.count("width")) ||
+        (0 == commandlineArguments.count("height")))
+    {
         std::cerr << argv[0] << " attaches to a shared memory area containing an ARGB image." << std::endl;
         std::cerr << "Usage:   " << argv[0] << " --cid=<OD4 session> --name=<name of shared memory area> [--verbose]" << std::endl;
         std::cerr << "         --cid:    CID of the OD4Session to send and receive messages" << std::endl;
@@ -41,7 +43,8 @@ int32_t main(int32_t argc, char **argv) {
         std::cerr << "         --height: height of the frame" << std::endl;
         std::cerr << "Example: " << argv[0] << " --cid=112 --name=img.i420 --width=640 --height=480" << std::endl;
     }
-    else {
+    else
+    {
         const std::string NAME{commandlineArguments["name"]};
         const uint32_t WIDTH{static_cast<uint32_t>(std::stoi(commandlineArguments["width"]))};
         const uint32_t HEIGHT{static_cast<uint32_t>(std::stoi(commandlineArguments["height"]))};
@@ -49,15 +52,19 @@ int32_t main(int32_t argc, char **argv) {
 
         // Attach to the shared memory.
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
-        if (sharedMemory && sharedMemory->valid()) {
+        if (sharedMemory && sharedMemory->valid())
+        {
             std::clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << std::endl;
 
             // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             // Endless loop; end the program by pressing Ctrl-C.
-            while (od4.isRunning()) {
-                cv::Mat img;
+            while (od4.isRunning())
+            {
+                cv::Mat img, frame_HSV;
+                int low_h = 94, low_s = 46, low_v = 50;
+                int high_h = 94, high_s = 41, high_v = 67;
 
                 // Wait for a notification of a new frame.
                 sharedMemory->wait();
@@ -75,13 +82,23 @@ int32_t main(int32_t argc, char **argv) {
                 }
                 sharedMemory->unlock();
 
+                //*****>
                 // TODO: Do something with the frame.
 
-                // Example: Draw a red rectangle and display image.
-                cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0,0,255));
+                //convert image (RGB) to HSV
+                cv::cvtColor(img, frame_HSV, COLOR_BGR2HSV);
+
+                //detect object based on hsv values
+                cv::inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold)
+
+                    // Example: Draw a red rectangle and display image.
+                    cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0, 0, 255));
+
+                //*****>
 
                 // Display image.
-                if (VERBOSE) {
+                if (VERBOSE)
+                {
                     cv::imshow(sharedMemory->name().c_str(), img);
                     cv::waitKey(1);
                 }
@@ -91,4 +108,3 @@ int32_t main(int32_t argc, char **argv) {
     }
     return retCode;
 }
-

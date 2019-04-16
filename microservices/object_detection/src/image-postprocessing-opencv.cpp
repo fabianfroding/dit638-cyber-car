@@ -27,13 +27,15 @@
 #include <memory>
 #include <mutex>
 
-int32_t main(int32_t argc, char **argv) {
+int32_t main(int32_t argc, char **argv)
+{
     int32_t retCode{1};
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if ( (0 == commandlineArguments.count("cid")) ||
-         (0 == commandlineArguments.count("name")) ||
-         (0 == commandlineArguments.count("width")) ||
-         (0 == commandlineArguments.count("height")) ) {
+    if ((0 == commandlineArguments.count("cid")) ||
+        (0 == commandlineArguments.count("name")) ||
+        (0 == commandlineArguments.count("width")) ||
+        (0 == commandlineArguments.count("height")))
+    {
         std::cerr << argv[0] << " attaches to a shared memory area containing an ARGB image." << std::endl;
         std::cerr << "Usage:   " << argv[0] << " --cid=<OD4 session> --name=<name of shared memory area> [--verbose]" << std::endl;
         std::cerr << "         --cid:    CID of the OD4Session to send and receive messages" << std::endl;
@@ -42,7 +44,8 @@ int32_t main(int32_t argc, char **argv) {
         std::cerr << "         --height: height of the frame" << std::endl;
         std::cerr << "Example: " << argv[0] << " --cid=112 --name=img.i420 --width=640 --height=480" << std::endl;
     }
-    else {
+    else
+    {
         const std::string NAME{commandlineArguments["name"]};
         const uint32_t WIDTH{static_cast<uint32_t>(std::stoi(commandlineArguments["width"]))};
         const uint32_t HEIGHT{static_cast<uint32_t>(std::stoi(commandlineArguments["height"]))};
@@ -50,25 +53,24 @@ int32_t main(int32_t argc, char **argv) {
 
         // Attach to the shared memory.
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
-        if (sharedMemory && sharedMemory->valid()) {
+        if (sharedMemory && sharedMemory->valid())
+        {
             std::clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << std::endl;
 
             // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             // Endless loop; end the program by pressing Ctrl-C.
-            while (od4.isRunning()) {
-              
-		cv::Mat img, frame_HSV,edges, frame_threshold;
+            while (od4.isRunning())
+            {
+                cv::Mat img, frame_HSV, edges, frame_threshold;
                 int low_H = 94, low_S = 46, low_V = 50;
                 int high_H = 94, high_S = 41, high_V = 67;
-                int COLOR_BGR2HSV = 40; 
-		
-		std::vector<std::vector<cv::Point> > contours;
+                int COLOR_BGR2HSV = 40;
+
+                std::vector<std::vector<cv::Point>> contours;
                 std::vector<cv::Vec4i> hierarchy;
 
-		cv::inRange(frame_HSV, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);
-		
                 // Wait for a notification of a new frame.
                 sharedMemory->wait();
 
@@ -86,31 +88,29 @@ int32_t main(int32_t argc, char **argv) {
                 }
                 sharedMemory->unlock();
 
-                // TODO: Do something with the frame.
-		
-		//convert image (RGB) to HSV
+                //convert image (RGB) to HSV
                 cv::cvtColor(img, frame_HSV, COLOR_BGR2HSV);
 
                 //apply threshold
                 cv::inRange(frame_HSV, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);
 
-                // Example: Draw a red rectangle and display image.
-                // cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0, 0, 255));
-		
-		//detect the edges
-		cv::Canny ( frame_threshold, edges, 100, 200, 3);
-		//find contours from edges
-		cv::findContours(edges, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-		//cv::approxPolyDP(contours, curve, 100, true);
-		
-		//end TODO.
+                //detect the edge
+                cv::Canny(frame_threshold, edges, 100, 200, 3);
+
+                //find contours from edges
+                cv::findContours(edges, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+                //cv::approxPolyDP(contours, curve, 100, true);
+
+                //end TODO.
 
                 // Example: Draw a red rectangle and display image.
-                cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0,0,255));
+                cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0, 0, 255));
 
                 // Display image.
-                if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), img);
+                if (VERBOSE)
+                {
+                    // cv::imshow(sharedMemory->name().c_str(), img);
+                    cv::imshow(sharedMemory->name().c_str(), frame_HSV);
                     cv::waitKey(1);
                 }
             }

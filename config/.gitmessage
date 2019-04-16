@@ -1,30 +1,9 @@
 # --- Template START ---
 # --------------------[subject]
-#subject of change: <summary of change. not more than 10 words.>
-#Example: "Updated Git Commit Template"
-#--[Enter Below]--
-Subject: 
 
-
-# --------------------[id]
-#story card id: <id to the story.>
-#Example: "<xyz>"
-#--[Enter Below]--
-ID: 
-
-
-# --------------------[how]
-#what did you do in the change: <short description of how you did the change. not more than 50 words.>
-#Example: "updated the commit template in config/.gitmessage to have an ID section"
-#--[Enter Below]--
-How: 
-
+# --------------------[what]
 
 # --------------------[why]
-#reason for change: <short description of why you had to make change. not more than 50 words.>
-#Example: "The previous template did not have a story id"
-#--[Enter Below]--
-Why: 
 
 
 # --- Template END ---

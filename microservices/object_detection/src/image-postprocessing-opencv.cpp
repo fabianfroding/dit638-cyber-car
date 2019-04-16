@@ -62,10 +62,22 @@ int32_t main(int32_t argc, char **argv)
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning())
             {
-                cv::Mat img, frame_HSV;
-                int low_H = 94, low_S = 46, low_V = 50;
-                int high_H = 94, high_S = 41, high_V = 67;
-                int COLOR_BGR2HSV = 40; //some value that is used to convert RGB to HSV (https://docs.opencv.org/3.4.3/d7/d1b/group__imgproc__misc.html#gga4e0972be5de079fed4e3a10e24ef5ef0aa4a7f0ecf2e94150699e48c79139ee12)
+                cv::Mat img, frame_HSV, frame_threshold, edges;
+                int low_H = 94, low_S = 46, low_V = 50;    //dark green - oli
+                int high_H = 94, high_S = 41, high_V = 67; // light green - oli
+                int COLOR_BGR2HSV = 40;
+                double threshold1 = 100;
+                double threshold2 = 200;
+                int apertureSize = 3;
+                vector<vector<Point>> contours;
+                vector<Vec4i> hierarchy;
+                int mode;
+                int method;
+                Point offset;
+
+                /* ^some value that is used to convert RGB to HSV 
+                (https://docs.opencv.org/3.4.3/d7/d1b/group__imgproc__misc.html#gga4e0972be5de079fed4e3a10e24ef5ef0aa4a7f0ecf2e94150699e48c79139ee12) 
+                - oli */
 
                 // Wait for a notification of a new frame.
                 sharedMemory->wait();
@@ -89,12 +101,27 @@ int32_t main(int32_t argc, char **argv)
                 //convert image (RGB) to HSV
                 cv::cvtColor(img, frame_HSV, COLOR_BGR2HSV);
 
-                //detect object based on hsv values
-                cv::inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold)
+                //apply threshold
+                cv::inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
 
-                    // Example: Draw a red rectangle and display image.
-                    cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0, 0, 255));
+                //detect the edges
+                void cv::Canny(image, edges, threshold1, threshold2, apertureSize);
+                void cv::findContours(edges, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+                /// Draw contours
+                Mat drawing = Mat::zeros(edges.size(), CV_8UC3);
+                for (int i = 0; i < contours.size(); i++)
+                {
+                    Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+                    drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, Point());
+                    circle(drawing, mc[i], 4, color, -1, 8, 0);
+                }
 
+                /// Show in a window
+                namedWindow("Contours", CV_WINDOW_AUTOSIZE);
+                imshow("Contours", drawing);
+
+                // Example: Draw a red rectangle and display image.
+                // cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0, 0, 255));
                 //*****>
 
                 // Display image.

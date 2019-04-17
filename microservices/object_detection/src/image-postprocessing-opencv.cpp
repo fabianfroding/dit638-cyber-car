@@ -63,17 +63,12 @@ int32_t main(int32_t argc, char **argv)
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning())
             {
-               /* cv::Mat img;
-                cv::Mat Convimg;
-                cv::Mat Thimg;
-                cv::Mat Eimg;
-		cv::Mat Nimg; */
-		cv::Mat img;
-		cv::Mat frame_HSV;
-		cv::Mat edges;
-		cv::Mat frame_threshold;
+                cv::Mat img;
+                cv::Mat frame_HSV;
+                cv::Mat edges;
+                cv::Mat frame_threshold;
 
-                int low_H = 40, low_S = 120, low_V = 120;
+                int low_H = 35, low_S = 100, low_V = 100;
                 int high_H = 75, high_S = 255, high_V = 255;
 
                 std::vector<std::vector<cv::Point>> contours;
@@ -99,25 +94,24 @@ int32_t main(int32_t argc, char **argv)
 
                 // TODO: Do something with the frame.
 
-               
-		//convert image (RGB) to HSV                
-		cvtColor(img, frame_HSV, CV_RGB2HSV);
-		//apply threshold
-                cv::inRange(frame_HSV ,cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);
-		//blur to remove tiny unwanted spots
+                //convert image (RGB) to HSV
+                cvtColor(img, frame_HSV, CV_RGB2HSV);
+                //apply threshold
+                cv::inRange(frame_HSV, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);
+                //blur to remove tiny unwanted spots
                 blur(frame_threshold, frame_threshold, cv::Size(3, 3));
-		//detect the edges
-                cv::Canny(frame_threshold, edges, 10, 200,3);
-		//find contours from edges
-                findContours( edges, contoursC, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-		//draw polygon
-                approxPolyDP(curves, contours, 1, true);
+                //detect the edges
+                cv::Canny(frame_threshold, edges, 10, 200, 3);
+                //find contours from edges
+                findContours(edges, contoursC, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-              
+                // //draw polygon
+                // approxPolyDP(curves, contours, 1, true);
+
                 // Display image.
                 if (VERBOSE)
                 {
-                    cv::imshow(sharedMemory->name().c_str(), frame_threshold);
+                    cv::imshow(sharedMemory->name().c_str(), edges);
                     cv::waitKey(1);
                 }
             }

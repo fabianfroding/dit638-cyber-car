@@ -7,7 +7,14 @@ body:
 # --------------------[issues]
 issues:
 
-
+# --- [TAGS] ---
+# Tag can be 
+#    doc      (changes to documentation)
+#    config   (changes to configurations)
+#    test     (adding or refactoring tests; no production code change)
+#    version  (version bump/new release; no production code change)
+#    hack     (Temporary fix to make things move forward; please avoid it)
+#    WIP      (Work In Progress; for intermediate commits to keep patches reasonably sized)
 # --- [Reminder] ---
 #   * Capitalize the subject line
 #   * Use the imperative mood in the subject line
@@ -15,13 +22,6 @@ issues:
 #   * Separate subject from body with a blank line
 #   * Use the body to explain what and why vs. how
 #   * Can use multiple lines with "-" or "*" for bullet points in body
-# --- [TAGS] ---
-# Tag can be 
-#    doc      (changes to documentation)
-#    test     (adding or refactoring tests; no production code change)
-#    version  (version bump/new release; no production code change)
-#    hack     (Temporary fix to make things move forward; please avoid it)
-#    WIP      (Work In Progress; for intermediate commits to keep patches reasonably sized)
 # --- Updating Template ---
 # 1. make changes
 # 2. run `git config commit.template <path-to-template-file>`

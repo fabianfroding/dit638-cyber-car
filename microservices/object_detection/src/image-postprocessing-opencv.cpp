@@ -76,8 +76,8 @@ int32_t main(int32_t argc, char **argv)
                 int low_H = 40, low_S = 120, low_V = 120;
                 int high_H = 75, high_S = 255, high_V = 255;
 
-                std::vector<std::vector<cv::Point> > contours;
-                std::vector<std::vector<cv::Point> > contoursC;
+                std::vector<std::vector<cv::Point>> contours;
+                std::vector<std::vector<cv::Point>> contoursC;
                 cv::Mat curves;
                 std::vector<cv::Vec4i> hierarchy;
 
@@ -117,7 +117,7 @@ int32_t main(int32_t argc, char **argv)
                 // Display image.
                 if (VERBOSE)
                 {
-                    cv::imshow(sharedMemory->name().c_str(), Eimg);
+                    cv::imshow(sharedMemory->name().c_str(), frame_threshold);
                     cv::waitKey(1);
                 }
             }

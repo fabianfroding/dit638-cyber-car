@@ -28,11 +28,11 @@
 
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{1};
-    std::vector<std::vector<cv::Point>> contours, polygons;
-    std::vector<cv::Rect> rectangle;
-    std::vector<cv::Vec4i> hierarchy;
-    cv::Mat img, img_hsv, frame_threshold, detected_edges;
-    cv::Scalar color = cv::Scalar( 255,255,255 );
+    std::vector<std::vector<cv::Point>> contours, polygons; //vectors of points 
+    std::vector<cv::Rect> rectangle; //rectangle drawn around the detected color
+    std::vector<cv::Vec4i> hierarchy; //array of arrays used for the findContours function
+    cv::Mat img, img_hsv, frame_threshold, detected_edges; //opencv Mat images
+    cv::Scalar color = cv::Scalar( 255,255,255 ); //colors used for the rectangle
 
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
     if ( (0 == commandlineArguments.count("cid")) ||
@@ -78,29 +78,34 @@ int32_t main(int32_t argc, char **argv) {
                     // lock/unlock.
                     cv::Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory->data());
                     img = wrapped.clone();
-		    cv::cvtColor(img,img_hsv, CV_BGR2HSV);
+		    cv::cvtColor(img,img_hsv, CV_BGR2HSV); //convert img to hsv
 
                 }
                 sharedMemory->unlock();
 
                 // TODO: Do something with the frame.
 
-                double low_H=61, high_H=76, low_S=50, high_S=255, low_V=71, high_V=255;
-		cv::inRange(img_hsv, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);
-		cv::Canny (frame_threshold, detected_edges, 1, 3, 5,true);
-		cv::findContours(detected_edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-		polygons.resize(contours.size());
+                double low_H=61, high_H=76, low_S=50, high_S=255, low_V=71, high_V=255; //hsv values
+		cv::inRange(img_hsv, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold); //thresholds the converted hsv frame
+		cv::Canny (frame_threshold, detected_edges, 1, 3, 5,true); //find edges in the threshold
+		cv::findContours(detected_edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0)); //retrieve contours from the image
+
+		//for every frame, resize polygon and rectangle to the contours size of it
+		polygons.resize(contours.size()); 
 		rectangle.resize(contours.size());
+
+		//approximate the curve of the polygon
 		for(size_t k = 0; k < contours.size(); k++){
         		cv::approxPolyDP(contours[k], polygons[k], 3, true);
 			//std::cout<<k;
 			rectangle[k]=cv::boundingRect(polygons[k]);
 		}
 
+		//draw the rectangle over frame_threshold
 		for (size_t i=0; i<contours.size(); i++){
 		cv::rectangle( frame_threshold, rectangle[i].tl(), rectangle[i].br(), color, 2, 8, 0 );
 		}
-		//cv::boundingRect(polygons);
+		
 		// Display image.
                 if (VERBOSE) {
                     cv::imshow(sharedMemory->name().c_str(), frame_threshold);

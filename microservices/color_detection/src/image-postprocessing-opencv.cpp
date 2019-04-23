@@ -26,19 +26,21 @@
 #include <memory>
 #include <mutex>
 
-int32_t main(int32_t argc, char **argv) {
+int32_t main(int32_t argc, char **argv)
+{
     int32_t retCode{1};
-    std::vector<std::vector<cv::Point>> contours, polygons; //vectors of points 
-    std::vector<cv::Rect> rectangle; //rectangle drawn around the detected color
-    std::vector<cv::Vec4i> hierarchy; //array of arrays used for the findContours function
-    cv::Mat img, img_hsv, frame_threshold, detected_edges; //opencv Mat images
-    cv::Scalar color = cv::Scalar( 255,255,255 ); //colors used for the rectangle
+    std::vector<std::vector<cv::Point>> contours, polygons; //vectors of points
+    std::vector<cv::Rect> rectangle;                        //rectangle drawn around the detected color
+    std::vector<cv::Vec4i> hierarchy;                       //array of arrays used for the findContours function
+    cv::Mat img, img_hsv, frame_threshold, detected_edges;  //opencv Mat images
+    cv::Scalar color = cv::Scalar(255, 255, 255);           //colors used for the rectangle
 
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if ( (0 == commandlineArguments.count("cid")) ||
-         (0 == commandlineArguments.count("name")) ||
-         (0 == commandlineArguments.count("width")) ||
-         (0 == commandlineArguments.count("height")) ) {
+    if ((0 == commandlineArguments.count("cid")) ||
+        (0 == commandlineArguments.count("name")) ||
+        (0 == commandlineArguments.count("width")) ||
+        (0 == commandlineArguments.count("height")))
+    {
         std::cerr << argv[0] << " attaches to a shared memory area containing an ARGB image." << std::endl;
         std::cerr << "Usage:   " << argv[0] << " --cid=<OD4 session> --name=<name of shared memory area> [--verbose]" << std::endl;
         std::cerr << "         --cid:    CID of the OD4Session to send and receive messages" << std::endl;
@@ -47,7 +49,8 @@ int32_t main(int32_t argc, char **argv) {
         std::cerr << "         --height: height of the frame" << std::endl;
         std::cerr << "Example: " << argv[0] << " --cid=112 --name=img.i420 --width=640 --height=480" << std::endl;
     }
-    else {
+    else
+    {
         const std::string NAME{commandlineArguments["name"]};
         const uint32_t WIDTH{static_cast<uint32_t>(std::stoi(commandlineArguments["width"]))};
         const uint32_t HEIGHT{static_cast<uint32_t>(std::stoi(commandlineArguments["height"]))};
@@ -55,17 +58,19 @@ int32_t main(int32_t argc, char **argv) {
 
         // Attach to the shared memory.
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
-        if (sharedMemory && sharedMemory->valid()) {
+        if (sharedMemory && sharedMemory->valid())
+        {
             std::clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << std::endl;
 
             // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             // Endless loop; end the program by pressing Ctrl-C.
-            while (od4.isRunning()) {
-               // cv::Mat img, img_hsv, frame_threshold, detected_edges;
-		
-		// Wait for a notification of a new frame.
+            while (od4.isRunning())
+            {
+                // cv::Mat img, img_hsv, frame_threshold, detected_edges;
+
+                // Wait for a notification of a new frame.
                 sharedMemory->wait();
 
                 // Lock the shared memory.
@@ -78,36 +83,37 @@ int32_t main(int32_t argc, char **argv) {
                     // lock/unlock.
                     cv::Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory->data());
                     img = wrapped.clone();
-		    cv::cvtColor(img,img_hsv, CV_BGR2HSV); //convert img to hsv
-
+                    cv::cvtColor(img, img_hsv, CV_BGR2HSV); //convert img to hsv
                 }
                 sharedMemory->unlock();
 
                 // TODO: Do something with the frame.
+                double low_H = 61, high_H = 76, low_S = 50, high_S = 255, low_V = 71, high_V = 255;                             //hsv values
+                cv::inRange(img_hsv, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);     //thresholds the converted hsv frame
+                cv::Canny(frame_threshold, detected_edges, 1, 3, 5, true);                                                      //find edges in the threshold
+                cv::findContours(detected_edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0)); //retrieve contours from the image
 
-                double low_H=61, high_H=76, low_S=50, high_S=255, low_V=71, high_V=255; //hsv values
-		cv::inRange(img_hsv, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold); //thresholds the converted hsv frame
-		cv::Canny (frame_threshold, detected_edges, 1, 3, 5,true); //find edges in the threshold
-		cv::findContours(detected_edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0)); //retrieve contours from the image
+                //for every frame, resize polygon and rectangle to the contours size of it
+                polygons.resize(contours.size());
+                rectangle.resize(contours.size());
 
-		//for every frame, resize polygon and rectangle to the contours size of it
-		polygons.resize(contours.size()); 
-		rectangle.resize(contours.size());
+                //approximate the curve of the polygon
+                for (size_t k = 0; k < contours.size(); k++)
+                {
+                    cv::approxPolyDP(contours[k], polygons[k], 3, true);
+                    //std::cout<<k;
+                    rectangle[k] = cv::boundingRect(polygons[k]);
+                }
 
-		//approximate the curve of the polygon
-		for(size_t k = 0; k < contours.size(); k++){
-        		cv::approxPolyDP(contours[k], polygons[k], 3, true);
-			//std::cout<<k;
-			rectangle[k]=cv::boundingRect(polygons[k]);
-		}
+                //draw the rectangle over frame_threshold
+                for (size_t i = 0; i < contours.size(); i++)
+                {
+                    cv::rectangle(frame_threshold, rectangle[i].tl(), rectangle[i].br(), color, 2, 8, 0);
+                }
 
-		//draw the rectangle over frame_threshold
-		for (size_t i=0; i<contours.size(); i++){
-		cv::rectangle( frame_threshold, rectangle[i].tl(), rectangle[i].br(), color, 2, 8, 0 );
-		}
-		
-		// Display image.
-                if (VERBOSE) {
+                // Display image.
+                if (VERBOSE)
+                {
                     cv::imshow(sharedMemory->name().c_str(), frame_threshold);
                     cv::waitKey(1);
                 }
@@ -117,4 +123,3 @@ int32_t main(int32_t argc, char **argv) {
     }
     return retCode;
 }
-

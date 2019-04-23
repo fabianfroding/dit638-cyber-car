@@ -27,8 +27,6 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 set(LIBRARIES Threads::Threads)
 
-find_package(OpenCV REQUIRED)
-
 ################################################################################
 # Extract cluon-msc from cluon-complete.hpp
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/cluon-msc
@@ -53,7 +51,3 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/Example.cpp)
 add_dependencies(${PROJECT_NAME} messages.hpp)
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
-
-add_executable(img_test ${CMAKE_CURRENT_SOURCE_DIR}/src/Image_Example.cpp)
-add_dependencies(img_test messages.hpp)
-target_link_libraries(img_test ${LIBRARIES} rt ${OpenCV_LIBS})

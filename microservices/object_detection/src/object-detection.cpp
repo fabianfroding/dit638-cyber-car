@@ -13,7 +13,7 @@ CascadeClassifier car_cascade;
 int main(int argc, const char** argv) {
     CommandLineParser parser(argc, argv,
                              "{help h||}"
-                             "{car_cascade|<path>|Path to car cascade.}"
+                             "{car_cascade|./classifier.xml|Path to car cascade.}"
                              "{camera|0|Camera device number.}");
     parser.printMessage();
     String car_cascade_name = parser.get<String>("car_cascade");

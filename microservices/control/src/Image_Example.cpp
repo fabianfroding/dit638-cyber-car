@@ -25,14 +25,13 @@
 
 #include <opencv2/opencv.hpp>
 
-int32_t main(int32_t argc, char **argv) {
+int32_t main(int32_t argc, char **argv)
+{
 
     // Parse the arguments from the command line
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
 
-    if ( (0 == commandlineArguments.count("cid")) 
-        || (0 == commandlineArguments.count("name")) 
-        || (0 != commandlineArguments.count("help")) )
+    if ((0 == commandlineArguments.count("cid")) || (0 == commandlineArguments.count("name")) || (0 != commandlineArguments.count("help")))
     {
         std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
         std::cerr << "Usage:  " << argv[0] << " --cid=<CID of your OD4Session> --name=<shared memory area>] ";
@@ -52,7 +51,7 @@ int32_t main(int32_t argc, char **argv) {
 
         const std::string NAME{commandlineArguments["name"]};
         std::unique_ptr<cluon::SharedMemory> shm(new cluon::SharedMemory{NAME});
-        if ( (!shm) || (!(shm->valid())) )
+        if ((!shm) || (!(shm->valid())))
         {
             std::cerr << "The shared memory " << NAME << " can not be reachable!" << std::endl;
             return -3;
@@ -77,11 +76,10 @@ int32_t main(int32_t argc, char **argv) {
         const uint8_t U = (uint8_t)(std::round(-0.169 * 255 - 0.331 * 255 + 0.5 * 0 + 128));
         const uint8_t V = (uint8_t)(std::round(0.5 * 255 - 0.419 * 255 - 0.081 * 0 + 128));
 
-
-        while(od4.isRunning() && shm && shm->valid())
+        while (od4.isRunning() && shm && shm->valid())
         {
-            shm->wait(); // Wait for shared memory notice from source
-            shm->lock(); // Freeze the current frame
+            shm->wait();                                                 // Wait for shared memory notice from source
+            shm->lock();                                                 // Freeze the current frame
             uint8_t *dataPtr = reinterpret_cast<uint8_t *>(shm->data()); // Pointer at the first pixel of the image
 
             // Draw a yellow square directly on the image
@@ -122,7 +120,7 @@ int32_t main(int32_t argc, char **argv) {
                 std::cout << "Output necessary verbose information of your own here." << std::endl;
             }
 
-            shm->unlock(); // Free the occupancy of the shared memory
+            shm->unlock();    // Free the occupancy of the shared memory
             shm->notifyAll(); // Tell othere that they could lock() now
         }
     }

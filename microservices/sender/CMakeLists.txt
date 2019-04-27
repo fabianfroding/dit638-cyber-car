@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
 #configure template for messages 
 set(OPENDLV_MESSAGE_SET messages.odvd)
+set(CLUON_COMPLETE cluon-complete.hpp)
 
 #configure required libraries
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -32,6 +33,10 @@ add_custom_target(messages.hpp
     COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp --out=${CMAKE_BINARY_DIR}/messages.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_MESSAGE_SET}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_MESSAGE_SET} ${CMAKE_BINARY_DIR}/cluon-msc)
 
+include_directories(SYSTEM ${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # executable
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/sender.cpp)
+add_dependencies(${PROJECT_NAME} messages.hpp)
+target_link_libraries(${PROJECT_NAME} ${LIBRARIES})

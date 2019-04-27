@@ -1,4 +1,4 @@
-# Install script for directory: /Users/olivermanzi/Desktop/PlayGround/School/Cyber_Systems_dit638/repos/cyber-car/microservices/test1
+# Install script for directory: /Users/olivermanzi/Desktop/PlayGround/School/Cyber_Systems_dit638/repos/cyber-car/microservices/sender
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/olivermanzi/Desktop/PlayGround/School/Cyber_Systems_dit638/repos/cyber-car/microservices/test1/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/olivermanzi/Desktop/PlayGround/School/Cyber_Systems_dit638/repos/cyber-car/microservices/sender/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -1,3 +1,0 @@
-message standardMessage [id = 3000]{
-    string text [id = 1];
-}

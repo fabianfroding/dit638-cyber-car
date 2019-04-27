@@ -86,8 +86,8 @@ int32_t main(int32_t argc, char **argv) {
 
                 // TODO: Do something with the frame.
 //		double sensitivity=0;
-                double low_H=61, high_H=76, low_S=50, high_S=255, low_V=45, high_V=255;
-		cv::GaussianBlur(img_hsv,blur,cv::Size(3,3),0,0,borderType);
+                double low_H=33, high_H=81, low_S=70, high_S=255, low_V=60, high_V=255;
+		cv::GaussianBlur(img_hsv,blur,cv::Size(1,1),0,0,borderType);
 		cv::inRange(blur, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);
 		cv::Canny (frame_threshold, detected_edges, 0, 0, 5,true);
 		cv::findContours(detected_edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
@@ -106,7 +106,7 @@ int32_t main(int32_t argc, char **argv) {
 		for (size_t i=0; i<contours.size(); i++){
 			area=rectangle[i].area();
 			perimeter=cv::arcLength(contours[i],true);
-			if(perimeter>160){
+			if(perimeter>70){
 				cv::rectangle(img, rectangle[i].tl(), rectangle[i].br(), color, 1, 8, 0 );
 				std::cout<< "DETECTED! Area= " <<area<< " | Perimeter = " << perimeter << std::endl << std::flush;
 			}

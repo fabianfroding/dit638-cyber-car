@@ -25,14 +25,17 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+using namespace std;
 
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{1};
-    std::vector<std::vector<cv::Point>> contours, polygons; //vectors of points 
-    std::vector<cv::Rect> rectangle; //rectangle drawn around the detected color
-    std::vector<cv::Vec4i> hierarchy; //array of arrays used for the findContours function
-    cv::Mat img, img_hsv, frame_threshold, detected_edges; //opencv Mat images
-    cv::Scalar color = cv::Scalar( 255,255,255 ); //colors used for the rectangle
+    std::vector<std::vector<cv::Point>> contours, polygons;
+    std::vector<cv::Rect> rectangle;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::Mat img, img_hsv, frame_threshold, detected_edges, blur, drawing;
+    cv::Scalar color = cv::Scalar( 255,255,255 );
+    int borderType=cv::BORDER_DEFAULT;
+    double area=0,perimeter=0;
 
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
     if ( (0 == commandlineArguments.count("cid")) ||
@@ -57,16 +60,14 @@ int32_t main(int32_t argc, char **argv) {
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
         if (sharedMemory && sharedMemory->valid()) {
             std::clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << std::endl;
-
+	   // std::cout<<"hello!"<<std::flush;
             // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning()) {
-               // cv::Mat img, img_hsv, frame_threshold, detected_edges;
-		
 		// Wait for a notification of a new frame.
-                sharedMemory->wait();
+     		sharedMemory->wait();
 
                 // Lock the shared memory.
                 sharedMemory->lock();
@@ -78,37 +79,41 @@ int32_t main(int32_t argc, char **argv) {
                     // lock/unlock.
                     cv::Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory->data());
                     img = wrapped.clone();
-		    cv::cvtColor(img,img_hsv, CV_BGR2HSV); //convert img to hsv
+		    cv::cvtColor(img,img_hsv, CV_BGR2HSV);
 
                 }
                 sharedMemory->unlock();
 
                 // TODO: Do something with the frame.
+//		double sensitivity=0;
+                double low_H=61, high_H=76, low_S=50, high_S=255, low_V=45, high_V=255;
+		cv::GaussianBlur(img_hsv,blur,cv::Size(3,3),0,0,borderType);
+		cv::inRange(blur, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold);
+		cv::Canny (frame_threshold, detected_edges, 0, 0, 5,true);
+		cv::findContours(detected_edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
-                double low_H=61, high_H=76, low_S=50, high_S=255, low_V=71, high_V=255; //hsv values
-		cv::inRange(img_hsv, cv::Scalar(low_H, low_S, low_V), cv::Scalar(high_H, high_S, high_V), frame_threshold); //thresholds the converted hsv frame
-		cv::Canny (frame_threshold, detected_edges, 1, 3, 5,true); //find edges in the threshold
-		cv::findContours(detected_edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0)); //retrieve contours from the image
-
-		//for every frame, resize polygon and rectangle to the contours size of it
-		polygons.resize(contours.size()); 
+		polygons.resize(contours.size());
 		rectangle.resize(contours.size());
 
 		//approximate the curve of the polygon
 		for(size_t k = 0; k < contours.size(); k++){
         		cv::approxPolyDP(contours[k], polygons[k], 3, true);
-			//std::cout<<k;
 			rectangle[k]=cv::boundingRect(polygons[k]);
 		}
+//		drawing=cv::Mat::zeros(contours.size(),CV_8UC3);
 
-		//draw the rectangle over frame_threshold
+		//draw the rectangles which perimeter is long enough over the img frame
 		for (size_t i=0; i<contours.size(); i++){
-		cv::rectangle( frame_threshold, rectangle[i].tl(), rectangle[i].br(), color, 2, 8, 0 );
+			area=rectangle[i].area();
+			perimeter=cv::arcLength(contours[i],true);
+			if(perimeter>160){
+				cv::rectangle(img, rectangle[i].tl(), rectangle[i].br(), color, 1, 8, 0 );
+				std::cout<< "DETECTED! Area= " <<area<< " | Perimeter = " << perimeter << std::endl << std::flush;
+			}
 		}
-		
 		// Display image.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), frame_threshold);
+                    cv::imshow(sharedMemory->name().c_str(), img);
                     cv::waitKey(1);
                 }
             }

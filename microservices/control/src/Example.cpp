@@ -38,7 +38,10 @@ int32_t main(int32_t argc, char **argv)
     }
     else
     {
-        /*create a cluon object for sending and recieving images*/
+        /** create a cluon object for sending and recieving images
+         * object takes in group numbers (int) as a parameter.
+         * The group number will be used by all microservices that need to communicate with one another÷ 
+        */
         cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
         /**/

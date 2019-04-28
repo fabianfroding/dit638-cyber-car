@@ -350,7 +350,6 @@ message opendlv.logic.perception.GroundSurfaceArea [id = 1143] {
   float y4 [id = 9];
 }
 
-
 message opendlv.logic.action.AimDirection [id = 1171] {
   float azimuthAngle [id = 1];
   float zenithAngle [id = 2];

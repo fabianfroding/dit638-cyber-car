@@ -26,7 +26,6 @@
 
 int32_t main(int32_t argc, char **argv)
 {
-
     // Parse the arguments from the command line
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
 

@@ -13,11 +13,11 @@ CascadeClassifier car_cascade;
 int main(int argc, const char** argv) {
     CommandLineParser parser(argc, argv,
                              "{help h||}"
-                             "{car_cascade|./classifier.xml|Path to car cascade.}"
+                             "{car_cascade|./cascade.xml|Path to car cascade.}"
                              "{camera|0|Camera device number.}");
     parser.printMessage();
     String car_cascade_name = parser.get<String>("car_cascade");
-    
+
     //-- 1. Load the cascades
     if (!car_cascade.load(car_cascade_name)) {
         cout << "--(!)Error loading car cascade\n";
@@ -39,7 +39,7 @@ int main(int argc, const char** argv) {
             cout << "--(!) No captured frame -- Break!\n";
             break;
         }
-        
+
         //-- 3. Apply the classifier to the frame
         detectAndDisplay(frame);
         if (waitKey(10) == 27) {

@@ -32,5 +32,6 @@ RUN apk update && \
     mkdir /opt
 WORKDIR /opt
 COPY --from=builder /tmp/obstacle_avoidance .
+ENTRYPOINT ["/opt/obstacle_avoidance"]
+
 RUN [ "cross-build-end" ]
-CMD ["/bin/sh","-c","/opt/obstacle_avoidance --cid=112 --verbose"]

@@ -1,1 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   -Wall -Wextra -Werror -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/receiver.dir/src/receiver.cpp.o  -o receiver 

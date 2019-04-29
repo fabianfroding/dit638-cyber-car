@@ -8,14 +8,6 @@ message standardMessage [id = 3000]{
     string text [id = 1];
 }
 
-message moveMessage [id=3002]{
-  char direction [id = 0];
-}
-
-message wheelMessage [id=3001]{
-  char direction [id = 0];
-}
-
 /*
  * Copyright (C) 2018 Chalmers Revere
  *

@@ -31,18 +31,19 @@ using namespace cv;
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{1};
 
-    Point centerOfRectangle;
-    vector<vector<Point>> car_contours, car_polygons;
-    vector<Rect> car_rectangle;
+    Point centerOfCar, centerOfStop;
+    vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
+    vector<Rect> car_rectangle, stop_rectangle;
     vector<Vec4i> car_hierarchy, stop_hierarchy;
     Rect temp;
     Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur;
     Mat stop_frame_threshold, stop_detected_edges;
-    Scalar color = Scalar( 255,255,255 );
-    float x,y;
+    Scalar color = Scalar( 0,255,0);
+    Scalar color2 = Scalar( 0,0,255 );
+    float car_x,car_y, stop_x, stop_y;
     double area=0;//,perimeter=0, maxArea=0;
     double stop_low_H=130, stop_high_H=166, stop_low_S=87, stop_high_S=255, stop_low_V=69, stop_high_V=255; //,sensitivity=0;
-    double car_low_H=40, car_high_H=80, car_low_S=70, car_high_S=255, car_low_V=65, car_high_V=255; //,sensitivity=0;
+    double car_low_H=40, car_high_H=80, car_low_S=85, car_high_S=255, car_low_V=80, car_high_V=255; //,sensitivity=0;
 
 
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
@@ -94,43 +95,63 @@ int32_t main(int32_t argc, char **argv) {
 
                 // TODO: Do something with the frame.
                 //GaussianBlur(img_hsv,blur,Size(1,1),0,0,borderType);
-                medianBlur(img_hsv,blur,5);
+                medianBlur(img_hsv,blur,11);
                 inRange(blur, Scalar(car_low_H, car_low_S, car_low_V), Scalar(car_high_H, car_high_S, car_high_V), car_frame_threshold);
+                inRange(blur, Scalar(stop_low_H, stop_low_S, stop_low_V), Scalar(stop_high_H, stop_high_S, stop_high_V), stop_frame_threshold);
             		Canny (car_frame_threshold, car_detected_edges, 0, 0, 5,true);
+                Canny(stop_frame_threshold, stop_detected_edges, 0, 0, 5, true);
             		findContours(car_detected_edges, car_contours, car_hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
+                findContours(stop_detected_edges, stop_contours, stop_hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0,0));
 
             		car_polygons.resize(car_contours.size());
             		car_rectangle.resize(car_contours.size());
 
-            		for(size_t k = 0; k < car_contours.size(); k++){
-                  //approximate the curve of the polygon
-                  approxPolyDP(car_contours[k], car_polygons[k], 3, true);
-                  //generate boundingrect for each closed contour
-                  car_rectangle[k]=boundingRect(car_polygons[k]);
-                  //coordinates of the center of each rectangle
-                  x=minAreaRect(car_contours[k]).center.x;
-                  y=minAreaRect(car_contours[k]).center.y;
-                  //center of the rectangle <Point>
-                  centerOfRectangle=minAreaRect(car_contours[k]).center;
-                  if(x<=(img.size().width)/3) //center is on the left
-                    cout<<"The rectangle is on the left and the center is "<<x<<","<<y<<"|"<<flush<<endl;
-                  else if (x >= (img.size().width)/3*2) //center on the right
-                    cout<<"The rectangle is on the right and the center is |"<<x<<","<<y<<"|"<<flush<<endl;
-                    //center in the middle
-                  else cout<<"The rectangle is in front of you and the center is "<<x<<","<<y<<"|"<<flush<<endl;
-                  groupRectangles(car_rectangle,3,0.7);
+                stop_polygons.resize(stop_contours.size());
+                stop_rectangle.resize(stop_contours.size());
 
-                  cv::rectangle(img, car_rectangle[k].tl(), car_rectangle[k].br(), color, 1, 8, 0);
+                for(size_t k=0; k<stop_contours.size(); k++)
+                {
+                  approxPolyDP(stop_contours[k], stop_polygons[k], 3, true);
+                  if(boundingRect(stop_polygons[k]).area()>100){
+                    stop_rectangle[k]=boundingRect(stop_polygons[k]);
+
+                    stop_y=minAreaRect(stop_contours[k]).center.y;
+                    stop_x=minAreaRect(stop_contours[k]).center.x;
+                    centerOfStop=minAreaRect(stop_contours[k]).center; //center of the rectangle <Point>
+
+                    if(stop_x<=(img.size().width)/3) //center is on the left
+                      cout<<"Detected STOP SIGN - LEFT |"<<stop_x<<","<<stop_y<<"|"<<flush<<endl;
+                    else if (stop_x >= (img.size().width)/3*2) //center on the right
+                      cout<<"Detected STOP SIGN - RIGHT |"<<stop_x<<","<<stop_y<<"|"<<flush<<endl;
+                    else //center in the middle
+                    cout<<"Detected STOP SIGN - CENTER |"<<stop_x<<","<<stop_y<<"|"<<flush<<endl;
+                  }
+                  groupRectangles(stop_rectangle,3,0.8); //group overlapping rectangles
+                  cv::rectangle(img, stop_rectangle[k].tl(), stop_rectangle[k].br(), color2, 2, 8, 0);
                 }
-                //group overlapping rectangles
 
+            		for(size_t k = 0; k < car_contours.size(); k++)
+                {
+                  approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
+                  if(boundingRect(car_polygons[k]).area()>100) //filter by area
+                {
+                    car_rectangle[k]=boundingRect(car_polygons[k]); //generate boundingrect for each closed contour
+                    //coordinates of the center of each rectangle
+                    car_x=minAreaRect(car_contours[k]).center.x;
+                    car_y=minAreaRect(car_contours[k]).center.y;
+                    centerOfCar=minAreaRect(car_contours[k]).center; //center of the rectangle <Point>
 
-                //draw the rectangles
-              /*  for (size_t i=0; i<rectangle.size(); i++){
-                  area=rectangle[i].area();
-                  cout<< "DETECTED! Area= " <<area<< perimeter << endl << flush;
-                  cv::rectangle(img, rectangle[i].tl(), rectangle[i].br(), color, 1, 8, 0);
-                }*/
+                    if(car_x<=(img.size().width)/3) //center is on the left
+                      cout<<"Detected CAR - LEFT |"<<car_x<<","<<car_y<<"|"<<flush<<endl;
+                    else if (car_x >= (img.size().width)/3*2) //center on the right
+                      cout<<"Detected CAR - RIGHT |"<<car_x<<","<<car_y<<"|"<<flush<<endl;
+                    else //center in the middle
+                    cout<<"Detected CAR - CENTER |"<<car_x<<","<<car_y<<"|"<<flush<<endl;
+                }
+                  groupRectangles(car_rectangle,3,0.8); //group overlapping rectangles
+                  cv::rectangle(img, car_rectangle[k].tl(), car_rectangle[k].br(), color, 2, 8, 0);
+                }
+
             		// Display image.
                 if (VERBOSE) {
                     imshow(sharedMemory->name().c_str(), img);

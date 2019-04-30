@@ -81,8 +81,8 @@ int32_t main(int32_t argc, char **argv)
         * set up messages that you might send
         */
         opendlv::proxy::PedalPositionRequest pedalReq; //pedalReq.position(xxx);
-        const float neutral{0};
-        float currentSpeed{0};
+        const float neutral = 0.0;
+        float currentSpeed = neutral;
 
         // opendlv::proxy::GroundSteeringRequest steerReq; //steerReq.groundSteering(xxx);
         // float right{-1 * TURN};
@@ -102,7 +102,7 @@ int32_t main(int32_t argc, char **argv)
                  * */
                 if (currentSpeed < MAXSPEED)
                 {
-                    currentSpeed++;
+                    currentSpeed = currentSpeed + 0.05;
                     pedalReq.position(currentSpeed);
                     service.send(pedalReq);
                     std::cout << "Current Speed is: " << currentSpeed << std::endl;
@@ -111,7 +111,7 @@ int32_t main(int32_t argc, char **argv)
                 {
                     pedalReq.position(currentSpeed);
                     service.send(pedalReq);
-                    std::cout << "Current Speed is: " << currentSpeed << std::endl;
+                    std::cout << "Reached max speed: " << currentSpeed << std::endl;
                 }
             }
 
@@ -123,7 +123,7 @@ int32_t main(int32_t argc, char **argv)
                  * */
                 pedalReq.position(neutral);
                 service.send(pedalReq);
-                currentSpeed = 0;
+                currentSpeed = neutral;
                 std::cout << "Detected object: " << frontSensor << std::endl;
                 std::cout << "stopping.." << std::endl;
                 std::this_thread::sleep_for(std::chrono::milliseconds(delay));

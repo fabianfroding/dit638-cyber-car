@@ -51,7 +51,10 @@ int32_t main(int32_t argc, char **argv)
         int userInp = -1;
         while (command.isRunning())
         {
-            std::cout << "press [" << left << "] for left turn, [" << right << "] for right turn and [" << neutral << "] for neutral wheel position" << std::endl;
+            std::cout << "press: " << endl;
+            std::cout << "[" << left << "] for left turn" std::endl;
+            std::cout << "[" << right << "] for right turn" << std::endl;
+            std::cout << "[" << neutral << "] for neutral" << std::endl;
             //take in input
             scanf("%d", &userInp);
             comm.type(static_cast<uint16_t>(userInp));

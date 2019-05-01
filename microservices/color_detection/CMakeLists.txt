@@ -19,7 +19,7 @@ project(image-postprocessing-opencv)
 
 ################################################################################
 # Defining the relevant versions of OpenDLV Standard Message Set and libcluon.
-set(OPENDLV_STANDARD_MESSAGE_SET opendlv-standard-message-set-v0.9.6.odvd)
+set(OPENDLV_STANDARD_MESSAGE_SET messages.odvd)
 set(CLUON_COMPLETE cluon-complete-v0.0.121.hpp)
 
 ################################################################################
@@ -83,7 +83,7 @@ if(UNIX)
     endif()
 endif()
 
-find_package(OpenCV REQUIRED core highgui imgproc)
+find_package(OpenCV REQUIRED)
 include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
 set(LIBRARIES ${LIBRARIES} ${OpenCV_LIBS})
 

@@ -83,7 +83,7 @@ if(UNIX)
     endif()
 endif()
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED objdetect core highgui imgproc)
 include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
 set(LIBRARIES ${LIBRARIES} ${OpenCV_LIBS})
 

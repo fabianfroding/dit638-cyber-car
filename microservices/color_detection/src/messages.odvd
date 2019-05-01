@@ -1,3 +1,22 @@
+/**
+ * Copyright (C) Carlos, the car
+ * This software was created by students at the software engineering and management class of 2020
+ * and should be distributed at YOUR OWN RISK.
+*/
+
+message carlos.vision.car [id = 3001]{
+  float coc [id = 1];
+  float area [id = 2];
+  uint16 queue [id = 3];
+}
+message carlos.vision.sign [id = 3002]{
+  uint16 type [id = 1];
+  float area [id = 2];
+}
+message carlos.command [id = 3003]{
+  uint16 type [id = 1];
+}
+
 /*
  * Copyright (C) 2018 Chalmers Revere
  *
@@ -162,12 +181,19 @@ message opendlv.proxy.ImageReadingShared [id = 14] {
     uint32 bytesPerPixel [id = 5];
 }
 
+// The PointCloudReading message supports the following sensors:
+// HDL32e; fields 1,2,3,4 (list of 2 bytes values),5
+// VLP32c; fields 1,2,3,4 (list of 2 bytes values),5,6
+// VLP16; fields 1,2,3,4 (list of 2 bytes values),5
+// RPLidar; fields 1,2,4 (list of 4 bytes float),5,6,7 (list of 4 bytes float)
 message opendlv.proxy.PointCloudReading [id = 49] {
-  float startAzimuth [id = 1];
-  float endAzimuth [id = 2];
+  float startAzimuth [id = 1]; // in degree
+  float endAzimuth [id = 2]; // in degree
   uint8 entriesPerAzimuth [id = 3];
   bytes distances [id = 4];
   uint8 numberOfBitsForIntensity [id = 5];
+  uint8 typeOfVerticalAngularLayout [id = 6]; // 0 = vertical angular layout for HDL32e, 1 = vertical angular layout fo VLP32c, 2 = RPlidar, ignored for other sensors.
+  bytes azimuthAngles [id = 7]; // list of azimuths (only used for RPlidar, ie., typeOfVerticalAngularLayout == 2)
 }
 
 message opendlv.proxy.PointCloudReadingShared [id = 28] {
@@ -251,6 +277,10 @@ message opendlv.system.NetworkStatusMessage [id = 1102] {
   string description [id = 2];
 }
 
+message opendlv.system.LogMessage [id = 1103] {
+  uint8 level [default = 6, id = 1]; // based on syslog: 0 = Emergency, 1 = Alert, 2 = Critical, 3 = Error, 4 = Warning, 5 = Notice, 6 = Informational, 7 = Debug   
+  string description [id = 2];
+}
 
 
 message opendlv.logic.sensation.Direction [id = 1110] {
@@ -338,7 +368,6 @@ message opendlv.logic.perception.GroundSurfaceArea [id = 1143] {
   float x4 [id = 8];
   float y4 [id = 9];
 }
-
 
 message opendlv.logic.action.AimDirection [id = 1171] {
   float azimuthAngle [id = 1];

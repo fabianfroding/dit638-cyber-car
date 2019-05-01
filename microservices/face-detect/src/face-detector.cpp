@@ -59,6 +59,11 @@ void detectAndDisplay(Mat frame) {
     car_cascade.detectMultiScale(frame_gray, cars);
     for (size_t i = 0; i < cars.size(); i++) {
         Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
+
+        //============================== PRINT % DECIMAL VALUE FOR CENTER OF DETECTED OBJECT
+        cout << (double)center.x / (double)frame.size().width << "\n";
+        //==============================
+
         ellipse(frame, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
         Mat carROI = frame_gray(cars[i]);
     }

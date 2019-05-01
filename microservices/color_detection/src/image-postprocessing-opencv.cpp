@@ -41,7 +41,7 @@ int32_t main(int32_t argc, char **argv) {
     Scalar color = Scalar( 0,255,0);
     Scalar color2 = Scalar( 0,0,255 );
     float car_x,car_y, stop_x, stop_y, percentage;
-    double area=0;//,perimeter=0, maxArea=0;
+    double area=0,perimeter=0;//,perimeter=0, maxArea=0;
     double stop_low_H=130, stop_high_H=166, stop_low_S=87, stop_high_S=255, stop_low_V=69, stop_high_V=255; //,sensitivity=0;
     double car_low_H=40, car_high_H=80, car_low_S=85, car_high_S=255, car_low_V=80, car_high_V=255; //,sensitivity=0;
 
@@ -133,26 +133,29 @@ int32_t main(int32_t argc, char **argv) {
             		for(size_t k = 0; k < car_contours.size(); k++)
                 {
                   approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-                  if(boundingRect(car_polygons[k]).area()>100 && arcLength(car_contours[k],true)>100) //filter by area
+                  area=boundingRect(car_polygons[k]).area();
+                  perimeter=arcLength(car_contours[k],true);
+                  if(area>100 && perimeter>100) //filter by area
                 {
                     car_rectangle[k]=boundingRect(car_polygons[k]); //generate boundingrect for each closed contour
                     //coordinates of the center of each rectangle
                     car_x=minAreaRect(car_contours[k]).center.x;
                     car_y=minAreaRect(car_contours[k]).center.y;
                     centerOfCar=minAreaRect(car_contours[k]).center; //center of the rectangle <Point>
-
+                    percentage=car_x / static_cast<float>(img.size().width); //percentage till the end of the frame
                     if(car_x<=(img.size().width)/3) //center is on the left
-                      cout<<"Detected CAR - LEFT |"<<car_x<<","<<car_y<<"|"<<flush<<endl;
+                      cout<<"Detected CAR - LEFT |"<<car_x<<","<<car_y<<"|"<<" %"<<static_cast<int>(percentage*100)<<flush<<endl;
                     else if (car_x >= (img.size().width)/3*2) //center on the right
-                      cout<<"Detected CAR - RIGHT |"<<car_x<<","<<car_y<<"|"<<flush<<endl;
+                      cout<<"Detected CAR - RIGHT |"<<car_x<<","<<car_y<<"|"<<" %"<<static_cast<int>(percentage*100)<<flush<<endl;
                     else //center in the middle
-                    cout<<"Detected CAR - CENTER |"<<car_x<<","<<car_y<<"|"<<flush<<endl;
+                    cout<<"Detected CAR - CENTER |"<<car_x<<","<<car_y<<"|"<<" %"<<static_cast<int>(percentage*100)<<flush<<endl;
                 }
                   groupRectangles(car_rectangle,3,0.8); //group overlapping rectangles
                   cv::rectangle(img, car_rectangle[k].tl(), car_rectangle[k].br(), color, 2, 8, 0);
-                  
+
                   //** OLIVER HERE**//
-                  percentage=car_x/img.size();
+                  //cout<<" % "<<percentage<<endl;
+                  //<double>area, <float>percentage and <double>perimeter are the variables you need
                   //** END OLIVER HERE**//
                 }
 

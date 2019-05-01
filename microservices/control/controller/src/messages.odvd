@@ -1,3 +1,22 @@
+/**
+ * Copyright (C) Carlos, the car
+ * This software was created by students at the software engineering and management class of 2020
+ * and should be distributed at YOUR OWN RISK.
+*/
+
+message carlos.vision.car [id = 3001]{
+  float coc [id = 1];
+  float area [id = 2];
+  float queue [id = 3];
+}
+message carlos.vision.sign [id = 3002]{
+  uint16 type [id = 1];
+  float area [id = 2];
+}
+message carlos.command [id = 3003]{
+  uint16 type [id = 1];
+}
+
 /*
  * Copyright (C) 2018 Chalmers Revere
  *

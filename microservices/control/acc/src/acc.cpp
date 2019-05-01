@@ -114,9 +114,46 @@ int32_t main(int32_t argc, char **argv)
 
         /** wait x secs before doing anything*/
         using namespace std::chrono_literals;
-        std::this_thread::sleep_for(5s);
+        std::this_thread::sleep_for(3s);
+        const int16_t delay{1000}; // milliseconds
         while (acc.isRunning())
         {
+            switch (turn)
+            {
+            case 0:
+                steerReq.groundSteering(neutral);
+                acc.send(steerReq);
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+                break;
+            case 1:
+                steerReq.groundSteering(right);
+                acc.send(steerReq);
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+                break;
+            case 2:
+                steerReq.groundSteering(left);
+                acc.send(steerReq);
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+                break;
+            default:
+                break;
+            }
+
+            if (frontSensor < FB)
+            {
+                /** 
+                 * front sensor detects something
+                 * stop car 
+                 * */
+                pedalReq.position(neutral);
+                acc.send(pedalReq);
+                currentSpeed = neutral;
+                if (VERBOSE)
+                {
+                    std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
+                }
+            }
+
             if (frontSensor > FB)
             {
                 /** 
@@ -138,39 +175,6 @@ int32_t main(int32_t argc, char **argv)
                 {
                     std::cout << "Moving..." << std::endl;
                 }
-            }
-
-            if (frontSensor < FB)
-            {
-                /** 
-                 * front sensor detects something
-                 * stop car 
-                 * */
-                pedalReq.position(neutral);
-                acc.send(pedalReq);
-                currentSpeed = neutral;
-                if (VERBOSE)
-                {
-                    std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
-                }
-            }
-
-            if (turn == 0)
-            {
-                steerReq.groundSteering(neutral);
-                acc.send(steerReq);
-            }
-
-            if (turn == 1)
-            {
-                steerReq.groundSteering(right);
-                acc.send(steerReq);
-            }
-
-            if (turn == 2)
-            {
-                steerReq.groundSteering(left);
-                acc.send(steerReq);
             }
         }
     }

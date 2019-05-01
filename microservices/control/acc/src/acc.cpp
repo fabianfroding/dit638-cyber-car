@@ -11,6 +11,8 @@
 #include "cluon-complete.hpp"
 #include "messages.hpp"
 
+opendlv::proxy::PedalPositionRequest autoPedal(float sensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE);
+
 int32_t main(int32_t argc, char **argv)
 {
     /**Parse the arguments from the command line*/
@@ -62,8 +64,8 @@ int32_t main(int32_t argc, char **argv)
         const float left = TURN;
 
         /*set up callback functions*/
-        float dist{0.0}, frontSensor{0.0};
-        auto distanceTrigger = [VERBOSE, FB, MAXSPEED, &acc, &pedalReq, &dist, &frontSensor, &neutral, &currentSpeed](cluon::data::Envelope &&envelope) {
+        float dist = 0.0, frontSensor = 0.0;
+        auto distanceTrigger = [VERBOSE, FB, MAXSPEED, &acc, &pedalReq, &dist, &frontSensor, &currentSpeed, &neutral](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             const uint16_t senderStamp = envelope.senderStamp();
@@ -73,55 +75,11 @@ int32_t main(int32_t argc, char **argv)
                 frontSensor = dist;
                 if (VERBOSE)
                 {
-                    std::cout << "Front sensor: [" << frontSensor << "]" << std::endl;
+                    std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
                 }
 
-                int res = 0;
-                if (frontSensor <= FB)
-                {
-                    res = 1;
-                }
-                else
-                {
-                    res = 2;
-                }
-                switch (res)
-                {
-                case 1:
-                    /** 
-                    * front sensor detects something
-                    * stop car 
-                    * */
-                    pedalReq.position(neutral);
-                    acc.send(pedalReq);
-                    currentSpeed = neutral;
-                    if (VERBOSE)
-                    {
-                        std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
-                    }
-                    break;
-                case 2:
-                    /** 
-                    * front sensor is clear
-                    * move car forward 
-                    * */
-                    if (currentSpeed < MAXSPEED)
-                    {
-                        currentSpeed = currentSpeed + 0.05;
-                        pedalReq.position(currentSpeed);
-                        acc.send(pedalReq);
-                    }
-                    if (currentSpeed == MAXSPEED)
-                    {
-                        pedalReq.position(currentSpeed);
-                        acc.send(pedalReq);
-                    }
-                    if (VERBOSE)
-                    {
-                        std::cout << "Moving..." << std::endl;
-                    }
-                    break;
-                }
+                pedalReq = autoPedal(frontSensor, FB, MAXSPEED, currentSpeed, neutral, VERBOSE);
+                acc.send(pedalReq);
             }
         };
 
@@ -181,59 +139,43 @@ int32_t main(int32_t argc, char **argv)
         std::this_thread::sleep_for(3s);
         while (acc.isRunning())
         {
-            //     switch (turn)
+            // if (frontSensor <= FB)
+            // {
+            //     /**
+            //     * front sensor detects something
+            //     * stop car
+            //     * */
+            //     pedalReq.position(neutral);
+            //     acc.send(pedalReq);
+            //     currentSpeed = neutral;
+            //     if (VERBOSE)
             //     {
-            //     case 0:
-            //         steerReq.groundSteering(neutral);
-            //         acc.send(steerReq);
-            //         break;
-            //     case 1:
-            //         steerReq.groundSteering(right);
-            //         acc.send(steerReq);
-            //         break;
-            //     case 2:
-            //         steerReq.groundSteering(left);
-            //         acc.send(steerReq);
-            //         break;
+            //         std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
             //     }
+            // }
 
-            //     switch (frontSensor)
+            // if (FB < frontSensor)
+            // {
+            //     /**
+            //      * front sensor is clear
+            //      * move car forward
+            //      * */
+            //     if (currentSpeed < MAXSPEED)
             //     {
-            //     case frontSensor < FB:
-            //         /**
-            //          * front sensor detects something
-            //          * stop car
-            //          * */
-            //         pedalReq.position(neutral);
+            //         currentSpeed = currentSpeed + 0.05;
+            //         pedalReq.position(currentSpeed);
             //         acc.send(pedalReq);
-            //         currentSpeed = neutral;
-            //         if (VERBOSE)
-            //         {
-            //             std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
-            //         }
-            //         break;
-            //     case frontSensor > FB:
-            //         /**
-            //          * front sensor is clear
-            //          * move car forward
-            //          * */
-            //         if (currentSpeed < MAXSPEED)
-            //         {
-            //             currentSpeed = currentSpeed + 0.05;
-            //             pedalReq.position(currentSpeed);
-            //             acc.send(pedalReq);
-            //         }
-            //         if (currentSpeed == MAXSPEED)
-            //         {
-            //             pedalReq.position(currentSpeed);
-            //             acc.send(pedalReq);
-            //         }
-            //         if (VERBOSE)
-            //         {
-            //             std::cout << "Moving..." << std::endl;
-            //         }
-            //         break;
             //     }
+            //     if (currentSpeed == MAXSPEED)
+            //     {
+            //         pedalReq.position(currentSpeed);
+            //         acc.send(pedalReq);
+            //     }
+            //     if (VERBOSE)
+            //     {
+            //         std::cout << "Moving..." << std::endl;
+            //     }
+            // }
         }
     }
     else
@@ -241,4 +183,45 @@ int32_t main(int32_t argc, char **argv)
         std::cout << "Carlos Out. (OD4Session timed out.)" << std::endl;
     }
     return 0;
+}
+
+opendlv::proxy::PedalPositionRequest autoPedal(float sensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE)
+{
+    opendlv::proxy::PedalPositionRequest pedalReq;
+
+    if (sensor <= safetyDistance)
+    {
+        /**
+        * front sensor detects something
+        * stop car
+        * */
+        pedalReq.position(neutral);
+        currentSpeed = neutral;
+        if (VERBOSE)
+        {
+            std::cout << "Object Detected at [" << sensor << "]" << std::endl;
+        }
+    }
+
+    if (safetyDistance < sensor)
+    {
+        /**
+        * front sensor is clear
+        * move car forward
+        * */
+        if (currentSpeed < maxSpeed)
+        {
+            currentSpeed = currentSpeed + 0.05;
+            pedalReq.position(currentSpeed);
+        }
+        if (currentSpeed == maxSpeed)
+        {
+            pedalReq.position(currentSpeed);
+        }
+        if (VERBOSE)
+        {
+            std::cout << "Moving..." << std::endl;
+        }
+    }
+    return pedalReq;
 }

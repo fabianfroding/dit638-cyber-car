@@ -1,18 +1,5 @@
 /*
- * Copyright (C) 2019  Christian Berger
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2019  Carlos
  */
 
 #include "cluon-complete.hpp"
@@ -42,7 +29,7 @@ int32_t main(int32_t argc, char **argv)
   Scalar color = Scalar(0, 255, 0);
   Scalar color2 = Scalar(0, 0, 255);
   float car_x, car_y, stop_x, stop_y, percentage;
-  double area = 0;                                                                                                    //,perimeter=0, maxArea=0;
+  double area = 0, perimeter = 0;                                                                                     //,perimeter=0, maxArea=0;
   double stop_low_H = 130, stop_high_H = 166, stop_low_S = 87, stop_high_S = 255, stop_low_V = 69, stop_high_V = 255; //,sensitivity=0;
   double car_low_H = 40, car_high_H = 80, car_low_S = 85, car_high_S = 255, car_low_V = 80, car_high_V = 255;         //,sensitivity=0;
 
@@ -74,10 +61,10 @@ int32_t main(int32_t argc, char **argv)
       clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << endl;
       // cout<<"hello!"<<flush;
       // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
-      cluon::OD4Session color_vision{static_cast<uint16_t>(stoi(commandlineArguments["cid"]))};
-      carlos::vision::car vision;
+      cluon::OD4Session od4{static_cast<uint16_t>(stoi(commandlineArguments["cid"]))};
+
       // Endless loop; end the program by pressing Ctrl-C.
-      while (color_vision.isRunning())
+      while (od4.isRunning())
       {
         // Wait for a notification of a new frame.
         sharedMemory->wait();
@@ -136,31 +123,33 @@ int32_t main(int32_t argc, char **argv)
 
         for (size_t k = 0; k < car_contours.size(); k++)
         {
-          approxPolyDP(car_contours[k], car_polygons[k], 3, true);                                  //approximate the curve of the polygon
-          if (boundingRect(car_polygons[k]).area() > 100 && arcLength(car_contours[k], true) > 100) //filter by area
+          approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
+          area = boundingRect(car_polygons[k]).area();
+          perimeter = arcLength(car_contours[k], true);
+          if (area > 100 && perimeter > 100) //filter by area
           {
             car_rectangle[k] = boundingRect(car_polygons[k]); //generate boundingrect for each closed contour
             //coordinates of the center of each rectangle
             car_x = minAreaRect(car_contours[k]).center.x;
             car_y = minAreaRect(car_contours[k]).center.y;
-            centerOfCar = minAreaRect(car_contours[k]).center; //center of the rectangle <Point>
-
-            if (car_x <= (img.size().width) / 3) //center is on the left
-              cout << "Detected CAR - LEFT |" << car_x << "," << car_y << "|" << flush << endl;
+            centerOfCar = minAreaRect(car_contours[k]).center;         //center of the rectangle <Point>
+            percentage = car_x / static_cast<float>(img.size().width); //percentage till the end of the frame
+            if (car_x <= (img.size().width) / 3)                       //center is on the left
+              cout << "Detected CAR - LEFT |" << car_x << "," << car_y << "|"
+                   << " %" << static_cast<int>(percentage * 100) << flush << endl;
             else if (car_x >= (img.size().width) / 3 * 2) //center on the right
-              cout << "Detected CAR - RIGHT |" << car_x << "," << car_y << "|" << flush << endl;
+              cout << "Detected CAR - RIGHT |" << car_x << "," << car_y << "|"
+                   << " %" << static_cast<int>(percentage * 100) << flush << endl;
             else //center in the middle
-              cout << "Detected CAR - CENTER |" << car_x << "," << car_y << "|" << flush << endl;
+              cout << "Detected CAR - CENTER |" << car_x << "," << car_y << "|"
+                   << " %" << static_cast<int>(percentage * 100) << flush << endl;
           }
           groupRectangles(car_rectangle, 3, 0.8); //group overlapping rectangles
           cv::rectangle(img, car_rectangle[k].tl(), car_rectangle[k].br(), color, 2, 8, 0);
 
           //** OLIVER HERE**//
-          percentage = car_x / img.size();
-          vision.coc(percentage);
-          vision.area(-1.0);
-          vision.queue(static_cast<uint16_t>(-1));
-          color_vision.send(vision);
+          //cout<<" % "<<percentage<<endl;
+          //<double>area, <float>percentage and <double>perimeter are the variables you need
           //** END OLIVER HERE**//
         }
 

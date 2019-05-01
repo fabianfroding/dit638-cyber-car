@@ -42,7 +42,7 @@ int32_t main(int32_t argc, char **argv)
   Scalar color = Scalar(0, 255, 0);
   Scalar color2 = Scalar(0, 0, 255);
   float car_x, car_y, stop_x, stop_y;
-  double area = 0;                                                                                                    //,perimeter=0, maxArea=0;
+  //double area = 0;                                                                                                    //,perimeter=0, maxArea=0;
   double stop_low_H = 130, stop_high_H = 166, stop_low_S = 87, stop_high_S = 255, stop_low_V = 69, stop_high_V = 255; //,sensitivity=0;
   double car_low_H = 40, car_high_H = 80, car_low_S = 85, car_high_S = 255, car_low_V = 80, car_high_V = 255;         //,sensitivity=0;
 

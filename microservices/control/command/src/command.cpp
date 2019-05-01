@@ -51,8 +51,8 @@ int32_t main(int32_t argc, char **argv)
         int userInp = -1;
         while (command.isRunning())
         {
-            std::cout << "press: " << endl;
-            std::cout << "[" << left << "] for left turn" std::endl;
+            std::cout << "press: " << std::endl;
+            std::cout << "[" << left << "] for left turn" << std::endl;
             std::cout << "[" << right << "] for right turn" << std::endl;
             std::cout << "[" << neutral << "] for neutral" << std::endl;
             //take in input

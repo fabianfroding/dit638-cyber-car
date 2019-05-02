@@ -12,45 +12,58 @@ CascadeClassifier car_cascade;
 
 int main(int argc, const char **argv)
 {
-    CommandLineParser parser(argc, argv,
-                             "{help h||}"
-                             "{car_cascade|./face-classifier.xml|Path to car cascade.}"
-                             "{camera|0|Camera device number.}");
-    parser.printMessage();
-    String car_cascade_name = parser.get<String>("car_cascade");
-
-    //-- 1. Load the cascades
-    if (!car_cascade.load(car_cascade_name))
+    cluon::OD4Session vision{123};
+    if (vision.isRunning())
     {
-        cout << "--(!)Error loading car cascade\n";
-        return -1;
-    };
-    int camera_device = parser.get<int>("camera");
-    VideoCapture capture;
+        carlos::vision::car msg;
 
-    //-- 2. Read the video stream
-    capture.open(camera_device);
-    if (!capture.isOpened())
-    {
-        cout << "--(!)Error opening video capture\n";
-        return -1;
-    }
+        CommandLineParser parser(argc, argv,
+                                 "{help h||}"
+                                 "{car_cascade|./face-classifier.xml|Path to car cascade.}"
+                                 "{camera|0|Camera device number.}");
+        parser.printMessage();
+        String car_cascade_name = parser.get<String>("car_cascade");
 
-    Mat frame;
-    while (capture.read(frame))
-    {
-        if (frame.empty())
+        //-- 1. Load the cascades
+        if (!car_cascade.load(car_cascade_name))
         {
-            cout << "--(!) No captured frame -- Break!\n";
-            break;
+            cout << "--(!)Error loading car cascade\n";
+            return -1;
+        };
+        int camera_device = parser.get<int>("camera");
+        VideoCapture capture;
+
+        //-- 2. Read the video stream
+        capture.open(camera_device);
+        if (!capture.isOpened())
+        {
+            cout << "--(!)Error opening video capture\n";
+            return -1;
         }
 
-        //-- 3. Apply the classifier to the frame
-        detectAndDisplay(frame);
-        if (waitKey(10) == 27)
+        Mat frame;
+        while (capture.read(frame))
         {
-            break; // escape
+            if (frame.empty())
+            {
+                cout << "--(!) No captured frame -- Break!\n";
+                break;
+            }
+
+            //-- 3. Apply the classifier to the frame
+            detectAndDisplay(frame);
+            if (waitKey(10) == 27)
+            {
+                break; // escape
+            }
         }
+
+        /*assume value is here*/
+        float center = 0.0;
+        //add data to msg object
+        msg.coc(center);
+        //send data to car with od4 session object
+        vision.send(msg);
     }
     return 0;
 }

@@ -11,7 +11,7 @@
 #include "cluon-complete.hpp"
 #include "messages.hpp"
 
-opendlv::proxy::PedalPositionRequest autoPedal(float sensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE);
+float autoPedal(float sensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE);
 
 int32_t main(int32_t argc, char **argv)
 {
@@ -39,14 +39,13 @@ int32_t main(int32_t argc, char **argv)
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
     std::cout << "speed: [" << MAXSPEED << "], turn angle: [" << TURN << "], front saftey distance: [" << FB << "]" << std::endl;
-
+    std::cout << "oli" << std::endl;
     /**
      * create a od4session object that will allow all microservices
      * with the same secret number to send and recieve messages from
      * one another
     */
     cluon::OD4Session acc{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
-
     if (acc.isRunning())
     {
         if (VERBOSE)
@@ -63,7 +62,7 @@ int32_t main(int32_t argc, char **argv)
         const float right = -1 * TURN;
         const float left = TURN;
 
-        /*set up callback functions*/
+        /*set up thread functions*/
         float dist = 0.0, frontSensor = 0.0;
         auto distanceTrigger = [VERBOSE, FB, MAXSPEED, &acc, &pedalReq, &dist, &frontSensor, &currentSpeed, &neutral](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
@@ -73,12 +72,20 @@ int32_t main(int32_t argc, char **argv)
             if (senderStamp == 0)
             {
                 frontSensor = dist;
+                float speed = autoPedal(frontSensor, FB, MAXSPEED, currentSpeed, neutral, VERBOSE);
                 if (VERBOSE)
                 {
-                    std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
+                    if (speed > neutral)
+                    {
+                        std::cout << "Moving..." << std::endl;
+                    }
+                    else
+                    {
+                        std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
+                    }
                 }
 
-                pedalReq = autoPedal(frontSensor, FB, MAXSPEED, currentSpeed, neutral, VERBOSE);
+                pedalReq.position(speed);
                 acc.send(pedalReq);
             }
         };
@@ -129,7 +136,7 @@ int32_t main(int32_t argc, char **argv)
             }
         };
 
-        /*register callback functions*/
+        /*register threads functions*/
         acc.dataTrigger(opendlv::proxy::DistanceReading::ID(), distanceTrigger);
         acc.dataTrigger(carlos::command::ID(), turnTrigger);
         acc.dataTrigger(carlos::vision::car::ID(), followTrigger);
@@ -185,25 +192,22 @@ int32_t main(int32_t argc, char **argv)
     return 0;
 }
 
-opendlv::proxy::PedalPositionRequest autoPedal(float sensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE)
+float autoPedal(float sensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE)
 {
-    opendlv::proxy::PedalPositionRequest pedalReq;
-
+    if (VERBOSE)
+    {
+        std::cout << "autoPedal engaged.." << std::endl;
+    }
     if (sensor <= safetyDistance)
     {
         /**
         * front sensor detects something
         * stop car
         * */
-        pedalReq.position(neutral);
         currentSpeed = neutral;
-        if (VERBOSE)
-        {
-            std::cout << "Object Detected at [" << sensor << "]" << std::endl;
-        }
     }
 
-    if (safetyDistance < sensor)
+    if (sensor > safetyDistance)
     {
         /**
         * front sensor is clear
@@ -212,16 +216,7 @@ opendlv::proxy::PedalPositionRequest autoPedal(float sensor, float safetyDistanc
         if (currentSpeed < maxSpeed)
         {
             currentSpeed = currentSpeed + 0.05;
-            pedalReq.position(currentSpeed);
-        }
-        if (currentSpeed == maxSpeed)
-        {
-            pedalReq.position(currentSpeed);
-        }
-        if (VERBOSE)
-        {
-            std::cout << "Moving..." << std::endl;
         }
     }
-    return pedalReq;
+    return currentSpeed;
 }

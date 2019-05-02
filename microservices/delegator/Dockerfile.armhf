@@ -1,5 +1,5 @@
 FROM pipill/armhf-alpine:edge as builder
-MAINTAINER Yue Kang yuek@chalmers.se
+MAINTAINER Carlos
 RUN [ "cross-build-start" ]
 RUN cat /etc/apk/repositories && \
     echo http://dl-4.alpinelinux.org/alpine/v3.7/main > /etc/apk/repositories && \
@@ -16,12 +16,12 @@ RUN cd /opt/sources && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=Release .. && \
-    make control && cp control /tmp
+    make delegator && cp delegator /tmp
 RUN [ "cross-build-end" ]
 
 # Deploy.
 FROM pipill/armhf-alpine:edge
-MAINTAINER Yue Kang yuek@chalmers.se
+MAINTAINER Carlos
 RUN [ "cross-build-start" ]
 RUN cat /etc/apk/repositories && \
     echo http://dl-4.alpinelinux.org/alpine/v3.7/main > /etc/apk/repositories && \
@@ -31,6 +31,7 @@ RUN apk update && \
     libstdc++ libgcc && \
     mkdir /opt
 WORKDIR /opt
-COPY --from=builder /tmp/control .
+COPY --from=builder /tmp/delegator .
+ENTRYPOINT ["/opt/delegator"]
+
 RUN [ "cross-build-end" ]
-CMD ["/bin/sh","-c","/opt/control --cid=112 --verbose"]

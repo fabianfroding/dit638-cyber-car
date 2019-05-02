@@ -1,14 +1,14 @@
-#cmake version
+# set up cmake version
 cmake_minimum_required(VERSION 3.2)
 
-#project name
-project(control)
+# project name
+project(delegator)
 
 # configure c++ compiler
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
-#configure template for messages
+#configure template for messages 
 set(OPENDLV_MESSAGE_SET messages.odvd)
 set(CLUON_COMPLETE cluon-complete.hpp)
 
@@ -37,6 +37,6 @@ include_directories(SYSTEM ${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # executable
-add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/Control.cpp)
+add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/delegator.cpp)
 add_dependencies(${PROJECT_NAME} messages.hpp)
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})

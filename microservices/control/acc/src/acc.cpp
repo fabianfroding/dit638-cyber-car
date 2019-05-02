@@ -53,6 +53,8 @@ int32_t main(int32_t argc, char **argv)
             std::cout << "session started..." << std::endl;
         }
 
+        const int16_t delay{500}; // milliseconds
+
         /*set up messages to send*/
         opendlv::proxy::PedalPositionRequest pedalReq; //pedalReq.position(xxx);
         const float neutral = 0.0;
@@ -79,7 +81,7 @@ int32_t main(int32_t argc, char **argv)
                     {
                         std::cout << "Moving..." << std::endl;
                     }
-                    else
+                    if (speed == neutral)
                     {
                         std::cout << "Object Detected at [" << frontSensor << "]" << std::endl;
                     }
@@ -87,6 +89,7 @@ int32_t main(int32_t argc, char **argv)
 
                 pedalReq.position(speed);
                 acc.send(pedalReq);
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay));
             }
         };
 
@@ -110,6 +113,7 @@ int32_t main(int32_t argc, char **argv)
                 acc.send(steerReq);
                 break;
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         };
 
         auto followTrigger = [&acc, &steerReq, &left, &right, &neutral](cluon::data::Envelope &&envelope) {
@@ -134,6 +138,7 @@ int32_t main(int32_t argc, char **argv)
                 steerReq.groundSteering(right);
                 acc.send(steerReq);
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         };
 
         /*register threads functions*/
@@ -192,13 +197,13 @@ int32_t main(int32_t argc, char **argv)
     return 0;
 }
 
-float autoPedal(float sensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE)
+float autoPedal(float frontSensor, float safetyDistance, float maxSpeed, float currentSpeed, float neutral, bool VERBOSE)
 {
     if (VERBOSE)
     {
         std::cout << "autoPedal engaged.." << std::endl;
     }
-    if (sensor <= safetyDistance)
+    if (frontSensor <= safetyDistance)
     {
         /**
         * front sensor detects something
@@ -207,7 +212,7 @@ float autoPedal(float sensor, float safetyDistance, float maxSpeed, float curren
         currentSpeed = neutral;
     }
 
-    if (sensor > safetyDistance)
+    if (frontSensor > safetyDistance)
     {
         /**
         * front sensor is clear

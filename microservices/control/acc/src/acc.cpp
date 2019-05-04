@@ -33,7 +33,7 @@ int32_t main(int32_t argc, char **argv)
     const uint16_t CID{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
     const bool EXTRA_VERBOSE{commandlineArguments.count("extra_v") != 0};
-    const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.20)};
+    const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.30)};
     const float MAX_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
 
     if (VERBOSE || EXTRA_VERBOSE)

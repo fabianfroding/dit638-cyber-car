@@ -102,6 +102,15 @@ vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_h
   return contours;
 }
 
+float carlos_converter(float num)
+{
+  float res = NULL;
+  float wheel_range = 1.2;
+  res = ((num * 100) * wheel_range) / 100;
+  res = -1 * (res - (wheel_range / 2));
+  return res;
+}
+
 int32_t main(int32_t argc, char **argv)
 { //**VARIABLES**//
   int32_t retCode{1};
@@ -218,7 +227,7 @@ int32_t main(int32_t argc, char **argv)
 
           //create the envelope containing this data
           car_tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
-          car_tracker.area(car_rectangle[k].area());                   //area
+          car_tracker.area(carlos_converter(car_rectangle[k].area())); //area
           car_tracker.queue(-1);                                       //number of cars queued
 
           vision_color.send(car_tracker); //send the message

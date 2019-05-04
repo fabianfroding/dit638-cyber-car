@@ -124,7 +124,7 @@ int32_t main(int32_t argc, char **argv)
   //**END VARIABLES**//
 
   auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-  if ((0 == commandlineArguments.count("cid")) ||
+  if ((0 == commandlineArguments.count("carlos")) ||
       (0 == commandlineArguments.count("name")) ||
       (0 == commandlineArguments.count("width")) ||
       (0 == commandlineArguments.count("height")))
@@ -140,6 +140,7 @@ int32_t main(int32_t argc, char **argv)
   else
   {
     const string NAME{commandlineArguments["name"]};
+    const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint32_t WIDTH{static_cast<uint32_t>(stoi(commandlineArguments["width"]))};
     const uint32_t HEIGHT{static_cast<uint32_t>(stoi(commandlineArguments["height"]))};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
@@ -149,10 +150,12 @@ int32_t main(int32_t argc, char **argv)
     if (sharedMemory && sharedMemory->valid())
     {
       clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << endl;
-      // cout<<"hello!"<<flush;
-      // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
-      cluon::OD4Session vision_color{static_cast<uint16_t>(stoi(commandlineArguments["cid"]))};
-      carlos::vision::car tracker;
+
+      /*od4 session for Carlos microservices*/
+      cluon::OD4Session vision_color{CARLOS_SESSION};
+      carlos::vision::car car_tracker;
+      //carlos::vision::sign sign_tracker;
+
       // Endless loop; end the program by pressing Ctrl-C.
       while (vision_color.isRunning())
       {
@@ -216,11 +219,11 @@ int32_t main(int32_t argc, char **argv)
           drawRectangle(car_rectangle[k], img, greenEdge);
 
           //create the envelope containing this data
-          tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
-          tracker.area(car_rectangle[k].area());                   //area
-          tracker.queue(-1);                                       //number of cars queued
+          car_tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
+          car_tracker.area(car_rectangle[k].area());                   //area
+          car_tracker.queue(-1);                                       //number of cars queued
 
-          vision_color.send(tracker); //send the message
+          vision_color.send(car_tracker); //send the message
         }
         numberOfCars = 0;
 
@@ -235,6 +238,5 @@ int32_t main(int32_t argc, char **argv)
     }
     retCode = 0;
   }
-
   return retCode;
 }

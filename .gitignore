@@ -5,5 +5,5 @@
 .vscode/
 
 #docker
-*/build/*
+build/*
 *.tar

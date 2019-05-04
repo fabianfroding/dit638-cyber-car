@@ -13,6 +13,41 @@
 
 float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE);
 
+float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE)
+{
+    const float neutral = 0.0;
+    float result = neutral;
+
+    if (front_sensor <= SAFE_DISTANCE)
+    {
+        /**
+        * front sensor detects something
+        * stop car
+        * */
+        result = neutral;
+
+        if (VERBOSE)
+        {
+            std::cout << "Sent stop instructions. Object Detected at [" << front_sensor << "]" << std::endl;
+        }
+    }
+
+    if (front_sensor > SAFE_DISTANCE)
+    {
+        /**
+        * front sensor is clear
+        * move car forward
+        * */
+        result = MAX_SPEED;
+
+        if (VERBOSE)
+        {
+            std::cout << "Sent move instructions at speed [" << result << "]" << std::endl;
+        }
+    }
+    return result;
+}
+
 int32_t main(int32_t argc, char **argv)
 {
     /**Parse the arguments from the command line*/
@@ -21,7 +56,7 @@ int32_t main(int32_t argc, char **argv)
     if (0 != commandlineArguments.count("help"))
     {
         std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
-        std::cerr << "Usage:" << argv[0] << " --cid=<CID of your OD4Session> [--help]" << std::endl;
+        std::cerr << "Usage:" << argv[0] << " --cid=<CID of your OD4Session>" << std::endl;
         std::cerr << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
         std::cerr << argv[0] << "[--sd=<front/back safety space>]" << std::endl;
         std::cerr << argv[0] << "[--sp=<speed, min is 0.13 and max is 0.8>]" << std::endl;
@@ -61,6 +96,7 @@ int32_t main(int32_t argc, char **argv)
         /*set up messages to send*/
         carlos::acc acc; //send to carlos session
         float frontSensor = 0.0;
+
         /*sends front sensor messages to carlos delegator*/
         auto distanceTrigger = [EXTRA_VERBOSE, VERBOSE, SAFE_DISTANCE, MAX_SPEED, &carlos_session, &acc, &frontSensor](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
@@ -105,39 +141,4 @@ int32_t main(int32_t argc, char **argv)
         std::cout << "Carlos Out. (OD4Session timed out.)" << std::endl;
     }
     return 0;
-}
-
-float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE)
-{
-    const float neutral = 0.0;
-    float result = neutral;
-
-    if (front_sensor <= SAFE_DISTANCE)
-    {
-        /**
-        * front sensor detects something
-        * stop car
-        * */
-        result = neutral;
-
-        if (VERBOSE)
-        {
-            std::cout << "Sent stop instructions. Object Detected at [" << front_sensor << "]" << std::endl;
-        }
-    }
-
-    if (front_sensor > SAFE_DISTANCE)
-    {
-        /**
-        * front sensor is clear
-        * move car forward
-        * */
-        result = MAX_SPEED;
-
-        if (VERBOSE)
-        {
-            std::cout << "Sent move instructions at speed [" << result << "]" << std::endl;
-        }
-    }
-    return result;
 }

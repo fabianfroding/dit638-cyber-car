@@ -55,17 +55,18 @@ int32_t main(int32_t argc, char **argv)
         }
 
         /*global variables*/
-        float speed = 0;
-        opendlv::proxy::PedalPositionRequest pedalReq;
+        float speed = NULL, turn = NULL, center_of_car = NULL, area_of_car = nullptr;
+        opendlv::proxy::PedalPositionRequest pedal;
+        opendlv::proxy::GroundSteeringReading wheel;
 
         /* prepare messages to recieve from carlos session */
-        auto distanceTrigger = [VERBOSE, &pedalReq, &speed](cluon::data::Envelope &&envelope) {
+        auto adaptive_cruise_control = [VERBOSE, &pedal, &speed](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc>(std::move(envelope));
             /*store speed value from acc microservice*/
             speed = msg.speed();
             /*store speed in car object*/
-            pedalReq.position(speed);
+            pedal.position(speed);
 
             if (VERBOSE)
             {
@@ -73,17 +74,40 @@ int32_t main(int32_t argc, char **argv)
             }
         };
 
-        /*registers callbacks*/
-        carlos_session.dataTrigger(carlos::acc::ID(), distanceTrigger);
-
-        /*prepare time related functions*/
-        auto sendPedalRequest{[VERBOSE, &car_session, &pedalReq]() -> bool {
-            /*send pedal req object to car*/
-            car_session.send(pedalReq);
+        auto user_instruction = [VERBOSE, &wheel, &turn](cluon::data::Envelope &&envelope) {
+            /** unpack message recieved*/
+            auto msg = cluon::extractMessage<carlos::command>(std::move(envelope));
+            /*store turn value from acc microservice*/
+            turn = msg.type();
+            /*store turn in car object*/
+            wheel.groundSteering(turn);
 
             if (VERBOSE)
             {
-                std::cout << "set speed to [" << pedalReq.position() << "]" << std::endl;
+                std::cout << "set wheel to [" << turn << "]" << std::endl;
+            }
+        };
+
+        auto car_detection_color = [VERBOSE, &wheel, &turn, &pedal, &speed, &center_of_car, &area_of_car](cluon::data::Envelope &&envelope) {
+            /** unpack message recieved*/
+            auto msg = cluon::extractMessage<carlos::vision::car>(std::move(envelope));
+            /*store data*/
+            center_of_car = msg.coc();
+            area_of_car = msg.area();
+        };
+
+        /*registers callbacks*/
+        carlos_session.dataTrigger(carlos::acc::ID(), adaptive_cruise_control);
+        carlos_session.dataTrigger(carlos::command::ID(), user_instruction);
+
+        /*prepare time related functions*/
+        auto sendPedalRequest{[VERBOSE, &car_session, &pedal]() -> bool {
+            /*send pedal req object to car*/
+            car_session.send(pedal);
+
+            if (VERBOSE)
+            {
+                std::cout << "set speed to [" << pedal.position() << "]" << std::endl;
             }
             return true;
         }};

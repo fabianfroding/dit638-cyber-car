@@ -62,8 +62,7 @@ float getPercentageOfWidth(vector<Point> contour, Mat image){
 
 //print the location of a detected color according to its name
 void printRectangleLocation(vector<Point> contour, Mat image, String object){
-  Moments moment = moments((Mat)contour);
-  double area=moment.m00;
+  double area=contourArea(contour);
   float x,y,percentage=0;
   Point centerOfObject;
   x=getCenterOfContour(contour).x;
@@ -93,7 +92,7 @@ vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_h
   Mat blur, frame_threshold, detected_edges;
   vector<Vec4i> hierarchy;
   vector<vector<Point>> contours;
-  medianBlur(hsvImage,blur,11);
+  medianBlur(hsvImage,blur,13);
   inRange(blur, Scalar(color_low), Scalar(color_high), frame_threshold);
   Canny (frame_threshold, detected_edges, 0, 0, 5,true);
   findContours(detected_edges, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
@@ -104,7 +103,7 @@ vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_h
 int32_t main(int32_t argc, char **argv)
 {   //**VARIABLES**//
     int32_t retCode{1};
-    int numberOfStops=0, numberOfCars=0;
+    //int numberOfStops=0, numberOfCars=0;
     vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
     vector<Rect> car_rectangle, stop_rectangle;
     vector<Vec4i> car_hierarchy, stop_hierarchy;
@@ -115,7 +114,7 @@ int32_t main(int32_t argc, char **argv)
     Scalar redEdge = Scalar( 0,0,255 );
     //stop sign colors
   //  double area=0, perimeter=0;
-    double stop_low_H=129, stop_high_H=164, stop_low_S=50, stop_high_S=255, stop_low_V=45, stop_high_V=255; //,sensitivity=0;
+    double stop_low_H=151, stop_high_H=172, stop_low_S=61, stop_high_S=255, stop_low_V=52, stop_high_V=255; //,sensitivity=0;
     //car sticker colors
     double car_low_H=40, car_high_H=80, car_low_S=75, car_high_S=255, car_low_V=68, car_high_V=255; //,sensitivity=0;
     Scalar car_low=Scalar(car_low_H,car_low_S,car_low_V), car_high=Scalar(car_high_H,car_high_S,car_high_V);
@@ -183,12 +182,11 @@ int32_t main(int32_t argc, char **argv)
                 for(size_t k=0; k<stop_contours.size(); k++)
                 {
                   approxPolyDP(stop_contours[k], stop_polygons[k], 3, true);
-                  if (boundingRect(stop_polygons[k]).area() > 200 && arcLength(stop_contours[k], true) > 200){
+                  if (contourArea(stop_contours[k]) > 2500 && arcLength(stop_contours[k], true) > 150){
                     stop_rectangle[k]=boundingRect(stop_polygons[k]);
                     printRectangleLocation(stop_contours[k],img, "stop"); //coordinates and position of the center of each rectangle
-                    numberOfStops++;
                   }
-                  groupRectangles(stop_rectangle,1,0.6); //group overlapping rectangles
+                  groupRectangles(stop_rectangle,1,0.8); //group overlapping rectangles
                   //cout<<"There are currently "<<stop_rectangle.size()<<" rectangles"<<endl<<flush;
                   drawRectangle(stop_rectangle[k], img, redEdge);
 
@@ -196,20 +194,18 @@ int32_t main(int32_t argc, char **argv)
                   signTracker.area(boundingRect(stop_polygons[k]).area());
                   vision_color.send(signTracker);
                 }
-                  numberOfStops=0;
+
                 //**PROCESS CAR GREEN DETECTION**
-                //if(car_contours.size()!=0){
-                numberOfCars=0;
               	for(size_t k = 0; k < car_contours.size(); k++){
                   approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-                  if (boundingRect(car_polygons[k]).area() > 150 && arcLength(car_contours[k], true) > 150){
+                  if (contourArea(car_contours[k]) > 300 && arcLength(car_contours[k], true) > 150){
                     car_rectangle[k]=boundingRect(car_polygons[k]);
                     printRectangleLocation(car_contours[k],img, "car"); //coordinates and position of the center of each rectangle
-                    numberOfCars++;
+                    //numberOfCars++;
                   }
-                  groupRectangles(car_rectangle,1,0.75); //group overlapping rectangles
-                  if(numberOfCars>0)
-                    cout<<"There are currently "<<numberOfCars<<" cars detected"<<endl<<flush;
+                  groupRectangles(car_rectangle,1,0.8); //group overlapping rectangles
+                  /*if(numberOfCars>0)
+                    cout<<"There are currently "<<numberOfCars<<" cars detected"<<endl<<flush;*/
                   drawRectangle(car_rectangle[k], img, greenEdge);
 
                   //create the envelope containing this data
@@ -219,7 +215,6 @@ int32_t main(int32_t argc, char **argv)
 
                   vision_color.send(carTracker); //send the message
                 }
-                numberOfCars=0;
 
                 //message sending stopped
             		// Display image.

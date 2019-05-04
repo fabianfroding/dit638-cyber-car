@@ -226,8 +226,8 @@ int32_t main(int32_t argc, char **argv)
           drawRectangle(car_rectangle[k], img, greenEdge);
 
           //create the envelope containing this data
-          car_tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
-          car_tracker.area(carlos_converter(car_rectangle[k].area())); //area
+          car_tracker.coc(carlos_converter(getPercentageOfWidth(car_contours[k], img))); //center of car
+          car_tracker.area(car_rectangle[k].area()); //area
           car_tracker.queue(-1);                                       //number of cars queued
 
           vision_color.send(car_tracker); //send the message

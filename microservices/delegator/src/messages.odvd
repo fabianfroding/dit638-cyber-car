@@ -17,6 +17,7 @@ message carlos.vision.car [id = 3001]{
 message carlos.vision.sign [id = 3002]{
   uint16 type [id = 1];
   float area [id = 2];
+  float cos [id=3];
 }
 
 message carlos.command [id = 3003]{

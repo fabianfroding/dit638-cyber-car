@@ -55,7 +55,10 @@ int32_t main(int32_t argc, char **argv)
         }
 
         /*global variables*/
-        float speed = NULL, turn = NULL, center_of_car = NULL, area_of_car = nullptr;
+        float speed = NULL, turn = NULL;
+        float center_of_car = NULL, area_of_car = nullptr;
+        float sign_type = NULL, center_of_sign = NULL, area_of_sign = NULL;
+
         opendlv::proxy::PedalPositionRequest pedal;
         opendlv::proxy::GroundSteeringReading wheel;
 
@@ -94,11 +97,23 @@ int32_t main(int32_t argc, char **argv)
             /*store data*/
             center_of_car = msg.coc();
             area_of_car = msg.area();
+            /*do stuff with data*/
+        };
+
+        auto sign_detection_color = [VERBOSE, &pedal, &speed, &center_of_sign, &area_of_sign](cluon::data::Envelope &&envelope) {
+            /** unpack message recieved*/
+            auto msg = cluon::extractMessage<carlos::vision::sign>(std::move(envelope));
+            /*store data*/
+            center_of_sign = msg.coc();
+            area_of_sign = msg.area();
+            /*do stuff with data*/
         };
 
         /*registers callbacks*/
         carlos_session.dataTrigger(carlos::acc::ID(), adaptive_cruise_control);
         carlos_session.dataTrigger(carlos::command::ID(), user_instruction);
+        carlos_session.dataTrigger(carlos::vision::car::ID(), car_detection_color);
+        carlos_session.dataTrigger(carlos::vision::sign::ID(), sign_detection_color);
 
         /*prepare time related functions*/
         auto sendPedalRequest{[VERBOSE, &car_session, &pedal]() -> bool {

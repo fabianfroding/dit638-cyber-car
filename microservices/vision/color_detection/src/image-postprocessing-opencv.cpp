@@ -15,6 +15,7 @@
 using namespace std;
 using namespace cv;
 using namespace cluon;
+
 //return the center of a contour -> Point(x,y)
 Point getCenterOfContour(vector<Point> contour)
 {
@@ -22,6 +23,17 @@ Point getCenterOfContour(vector<Point> contour)
   return center;
 }
 
+//area
+double getAreaOfContour(vector<Point> contour)
+{
+  return contourArea(contour);
+}
+
+//perimeter
+double getPerimeterOfContour(vector<Point> contour)
+{
+  return arcLength(contour, true);
+}
 //draw the rectangle on the frame
 void drawRectangle(Rect rectangle, Mat image, Scalar color)
 {
@@ -43,6 +55,8 @@ float getPercentageOfWidth(vector<Point> contour, Mat image)
 //print the location of a detected color according to its name
 void printRectangleLocation(vector<Point> contour, Mat image, String object)
 {
+  Moments moment = moments((Mat)contour);
+  double area = moment.m00;
   float x, y, percentage = 0;
   Point centerOfObject;
   x = getCenterOfContour(contour).x;
@@ -52,26 +66,30 @@ void printRectangleLocation(vector<Point> contour, Mat image, String object)
   if (object == "stop")
   {
     if (x <= (image.size().width) / 3) //center is on the left
-      cout << "Detected STOP SIGN - LEFT |" << x << "," << y << "|" << flush << endl;
+      cout << "Detected STOP SIGN - LEFT |" << x << "," << y << "|"
+           << " %" << static_cast<int>(percentage * 100) << " - Area= " << area << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
     else if (x >= (image.size().width) / 3 * 2) //center on the right
-      cout << "Detected STOP SIGN - RIGHT |" << x << "," << y << "|" << flush << endl;
+      cout << "Detected STOP SIGN - RIGHT |" << x << "," << y << "|"
+           << " %" << static_cast<int>(percentage * 100) << " - Area= " << area << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
     else //center in the middle
-      cout << "Detected STOP SIGN - CENTER |" << x << "," << y << "|" << flush << endl;
+      cout << "Detected STOP SIGN - CENTER |" << x << "," << y << "|"
+           << " %" << static_cast<int>(percentage * 100) << " - Area= " << area << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
   }
   else if (object == "car")
   {
     if (x <= (image.size().width) / 3) //center is on the left
       cout << "Detected CAR - LEFT |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << flush << endl;
+           << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
     else if (x >= (image.size().width) / 3 * 2) //center on the right
       cout << "Detected CAR - RIGHT |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << flush << endl;
+           << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
     else //center in the middle
       cout << "Detected CAR - CENTER |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << flush << endl;
+           << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
   }
 }
 
+//get contours of a detected range of colors in hsv image
 vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_high)
 {
   Mat blur, frame_threshold, detected_edges;
@@ -81,6 +99,7 @@ vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_h
   inRange(blur, Scalar(color_low), Scalar(color_high), frame_threshold);
   Canny(frame_threshold, detected_edges, 0, 0, 5, true);
   findContours(detected_edges, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+  //cout<<"there are "<<hierarchy.size()<<" objects detected"<<endl<<flush;
   return contours;
 }
 
@@ -99,7 +118,7 @@ int32_t main(int32_t argc, char **argv)
   //  double area=0, perimeter=0;
   double stop_low_H = 130, stop_high_H = 160, stop_low_S = 87, stop_high_S = 255, stop_low_V = 69, stop_high_V = 255; //,sensitivity=0;
   //car sticker colors
-  double car_low_H = 40, car_high_H = 80, car_low_S = 85, car_high_S = 255, car_low_V = 80, car_high_V = 255; //,sensitivity=0;
+  double car_low_H = 40, car_high_H = 80, car_low_S = 75, car_high_S = 255, car_low_V = 75, car_high_V = 255; //,sensitivity=0;
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
   Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
@@ -164,6 +183,7 @@ int32_t main(int32_t argc, char **argv)
         stop_rectangle.resize(stop_contours.size());
 
         //**PROCESS STOP SIGNAL DETECTION**
+        int numberOfStops;
         for (size_t k = 0; k < stop_contours.size(); k++)
         {
           approxPolyDP(stop_contours[k], stop_polygons[k], 3, true);
@@ -171,13 +191,16 @@ int32_t main(int32_t argc, char **argv)
           {
             stop_rectangle[k] = boundingRect(stop_polygons[k]);
             printRectangleLocation(stop_contours[k], img, "stop"); //coordinates and position of the center of each rectangle
+            numberOfStops++;
           }
-          groupRectangles(stop_rectangle, 3, 0.8); //group overlapping rectangles
+          groupRectangles(stop_rectangle, 1, 0.6); //group overlapping rectangles
+          //cout<<"There are currently "<<stop_rectangle.size()<<" rectangles"<<endl<<flush;
           drawRectangle(stop_rectangle[k], img, redEdge);
         }
-
+        numberOfStops = 0;
         //**PROCESS CAR GREEN DETECTION**
         //if(car_contours.size()!=0){
+        int numberOfCars = 0;
         for (size_t k = 0; k < car_contours.size(); k++)
         {
           approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
@@ -185,16 +208,21 @@ int32_t main(int32_t argc, char **argv)
           {
             car_rectangle[k] = boundingRect(car_polygons[k]);
             printRectangleLocation(car_contours[k], img, "car"); //coordinates and position of the center of each rectangle
+            numberOfCars++;
           }
-          groupRectangles(car_rectangle, 3, 0.8); //group overlapping rectangles
+          groupRectangles(car_rectangle, 1, 0.6); //group overlapping rectangles
+          cout << "There are currently " << numberOfRectangles << " cars detected" << endl
+               << flush;
           drawRectangle(car_rectangle[k], img, greenEdge);
 
-          //message sending started
-          tracker.coc(getPercentageOfWidth(car_contours[k], img));
-          tracker.area(car_rectangle[k].area());
-          tracker.queue(-1);
-          vision_color.send(tracker);
+          //create the envelope containing this data
+          tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
+          tracker.area(car_rectangle[k].area());                   //area
+          tracker.queue(-1);                                       //number of cars queued
+
+          vision_color.send(tracker); //send the message
         }
+        numberOfCars = 0;
 
         //message sending stopped
         // Display image.

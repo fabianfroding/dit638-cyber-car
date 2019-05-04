@@ -19,14 +19,20 @@ int32_t main(int32_t argc, char **argv)
     if ((0 == commandlineArguments.count("cid")) || (0 != commandlineArguments.count("help")))
     {
         std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
-        std::cerr << "Usage:  " << argv[0] << " --cid=<CID of your OD4Session> [--help]" << std::endl;
-        std::cerr << "example:  " << argv[0] << " --cid=112" << std::endl;
+        std::cerr << "Usage:" << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
+        std::cerr << argv[0] << "[--tr=<turn angle>]" << std::endl;
+        std::cerr << argv[0] << "[--help]" << std::endl;
+        std::cerr << "example:  " << argv[0] << " --carlos=646 --sd=0.2 --sp=013" << std::endl;
         return -1;
     }
+    const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
+    const float TURN{(commandlineArguments.count("tr") != 0) ? static_cast<float>(std::stof(commandlineArguments["tr"])) : static_cast<float>(0.20)};
+
     if (VERBOSE)
     {
         std::cout << "starting up " << argv[0] << "..." << std::endl;
+        std::cout << "turn: [" << TURN << "]" std::endl;
     }
 
     /**

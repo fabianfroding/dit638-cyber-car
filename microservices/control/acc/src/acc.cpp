@@ -118,6 +118,7 @@ int32_t main(int32_t argc, char **argv)
                 float speed = autoPedal(frontSensor, SAFE_DISTANCE, MAX_SPEED, VERBOSE);
                 /*store speed in carlos object*/
                 acc.speed(speed);
+                acc.front_sensor_is_safe((frontSensor < SAFE_DISTANCE) ? true : false); //if front sensor is safe, set to true, else set to false
                 /*send object to carlos delegator*/
                 carlos_session.send(acc);
             }

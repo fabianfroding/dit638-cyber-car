@@ -6,6 +6,7 @@
 
 message carlos.acc [id = 3000]{
   float speed [id = 1];
+  bool front_sensor_is_safe [id =2];
 }
 
 message carlos.vision.car [id = 3001]{

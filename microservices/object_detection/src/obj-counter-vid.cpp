@@ -3,6 +3,9 @@
 #include "opencv2/imgproc.hpp"
 #include <iostream>
 
+#include "cluon-complete.hpp"
+#include "messages.hpp"
+
 #define SHOW_STREAM true
 #define VIDEO "vid1.mp4" // Name of video file.
 

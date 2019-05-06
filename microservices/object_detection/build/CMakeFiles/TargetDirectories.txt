@@ -1,0 +1,4 @@
+/home/fabian/cyber-car/microservices/object_detection/build/CMakeFiles/edit_cache.dir
+/home/fabian/cyber-car/microservices/object_detection/build/CMakeFiles/messages.hpp.dir
+/home/fabian/cyber-car/microservices/object_detection/build/CMakeFiles/rebuild_cache.dir
+/home/fabian/cyber-car/microservices/object_detection/build/CMakeFiles/object_detection.dir

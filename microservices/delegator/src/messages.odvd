@@ -21,7 +21,7 @@ message carlos.vision.sign [id = 3002]{
 }
 
 message carlos.command [id = 3003]{
-  float type [id = 1];
+  float turn_type [id = 1];
 }
 
 message carlos.semaphore.acc [id = 3004]{

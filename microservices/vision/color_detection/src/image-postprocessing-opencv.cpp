@@ -148,6 +148,7 @@ int32_t main(int32_t argc, char **argv)
   else
   {
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
+    const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const string NAME{commandlineArguments["name"]};
     const uint32_t WIDTH{static_cast<uint32_t>(stoi(commandlineArguments["width"]))};
     const uint32_t HEIGHT{static_cast<uint32_t>(stoi(commandlineArguments["height"]))};
@@ -160,11 +161,33 @@ int32_t main(int32_t argc, char **argv)
       clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << endl;
       // cout<<"hello!"<<flush;
       // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
-      cluon::OD4Session vision_color{CARLOS_SESSION};
+      cluon::OD4Session carlos_session{CARLOS_SESSION};
+      cluon::OD4Session car_session{CID_SESSION};
+
+      opendlv::proxy::GroundSteeringRequest wheel;
       carlos::vision::car car_tracker;
       carlos::vision::sign sign_tracker;
+
+      bool SEMAPHORE_KEY = true;
+
+      /*prepared callback*/
+      auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
+        /** unpack message recieved*/
+        auto msg = cluon::extractMessage<carlos::semaphore::vision::color>(std::move(envelope));
+        /*store data*/
+        SEMAPHORE_KEY = msg.semaphore();
+
+        if (VERBOSE)
+        {
+          std::cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
+        }
+      };
+
+      /*registered callback*/
+      carlos_session.dataTrigger(carlos::semaphore::vision::color::ID(), semaphore);
+
       // Endless loop; end the program by pressing Ctrl-C.
-      while (vision_color.isRunning())
+      while (carlos_session.isRunning() || car_session.isRunning())
       {
         // Wait for a notification of a new frame.
         sharedMemory->wait();
@@ -207,7 +230,7 @@ int32_t main(int32_t argc, char **argv)
 
           sign_tracker.type(1);
           sign_tracker.area(boundingRect(stop_polygons[k]).area());
-          vision_color.send(sign_tracker);
+          carlos_session.send(sign_tracker);
         }
 
         //**PROCESS CAR GREEN DETECTION**
@@ -226,11 +249,16 @@ int32_t main(int32_t argc, char **argv)
           drawRectangle(car_rectangle[k], img, greenEdge);
 
           //create the envelope containing this data
-          car_tracker.coc(carlos_converter(getPercentageOfWidth(car_contours[k], img))); //center of car
-          car_tracker.area(car_rectangle[k].area()); //area
+          wheel.position(carlos_converter(getPercentageOfWidth(car_contours[k], img)));
+          if (SEMAPHORE_KEY)
+          {
+            car_session.send(wheel); //send to car
+          }
+          car_tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
+          car_tracker.area(car_rectangle[k].area());                   //area
           car_tracker.queue(-1);                                       //number of cars queued
 
-          vision_color.send(car_tracker); //send the message
+          carlos_session.send(car_tracker); //send the message to the delegator
         }
 
         //message sending stopped

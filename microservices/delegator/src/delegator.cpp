@@ -52,13 +52,13 @@ int32_t main(int32_t argc, char **argv)
         /*global variables*/ //sign vision
         // carlos::semaphore::acc acc_semaphore;
         carlos::semaphore::cmd cmd_semaphore;
-        // carlos::semaphore::vision::color color_semaphore;
+        carlos::semaphore::vision::color color_semaphore;
         // carlos::semaphore::vision::object object_semaphore;
         const bool LOCK = false;
         const bool UNLOCK = true;
 
         /* prepare messages to recieve from carlos session */
-        auto adaptive_cruise_control = [VERBOSE, &carlos_session, &cmd_semaphore, &LOCK, &UNLOCK](cluon::data::Envelope &&envelope) {
+        auto adaptive_cruise_control = [VERBOSE, &carlos_session, &cmd_semaphore, &color_semaphore, &LOCK, &UNLOCK](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -70,10 +70,12 @@ int32_t main(int32_t argc, char **argv)
                 /*[test] unlock wheels*/
                 cmd_semaphore.semaphore(UNLOCK);
                 carlos_session.send(cmd_semaphore);
+                color_semaphore.semaphore(UNLOCK);
+                carlos_session.send(color_semaphore);
 
                 if (VERBOSE)
                 {
-                    std::cout << "SENT -> UNLOCKED -> CMD" << std::endl;
+                    std::cout << "SENT -> UNLOCKED -> CMD, COLOR" << std::endl;
                 }
             }
             else
@@ -81,10 +83,12 @@ int32_t main(int32_t argc, char **argv)
                 /*[test] lock wheels*/
                 cmd_semaphore.semaphore(LOCK);
                 carlos_session.send(cmd_semaphore);
+                color_semaphore.semaphore(LOCK);
+                carlos_session.send(color_semaphore);
 
                 if (VERBOSE)
                 {
-                    std::cout << "SENT -> LOCKED -> CMD" << std::endl;
+                    std::cout << "SENT -> LOCKED -> CMD, COLOR" << std::endl;
                 }
             }
         };

@@ -6,6 +6,7 @@
 
 message carlos.acc [id = 3000]{
   float speed [id = 1];
+  bool front_sensor_is_safe [id = 2];
 }
 
 message carlos.vision.car [id = 3001]{
@@ -22,6 +23,22 @@ message carlos.vision.sign [id = 3002]{
 
 message carlos.command [id = 3003]{
   float type [id = 1];
+}
+
+message carlos.semaphor.acc [id = 3004]{
+  bool unlocked [id = 1];
+}
+
+message carlos.semaphor.cmd [id = 3005]{
+  bool unlocked [id = 1];
+}
+
+message carlos.semaphor.vision.color [id = 3006]{
+  bool unlocked [id = 1];
+}
+
+message carlos.semaphor.vision.object [id = 3007]{
+  bool unlocked [id = 1];
 }
 
 /*

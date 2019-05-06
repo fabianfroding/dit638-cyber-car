@@ -60,6 +60,11 @@ int32_t main(int32_t argc, char **argv)
         float center_of_sign = unassigned, area_of_sign = unassigned; //sign vision
         uint16_t sign_type = -1;                                      //sign vision
 
+        carlos::semaphore::acc acc_semaphore;
+        carlos::semaphore::cmd cmd_semaphore;
+        carlos::semaphore::vision::color color_semaphore;
+        carlos::semaphore::vision::object object_semaphore;
+
         opendlv::proxy::PedalPositionRequest pedal;
         opendlv::proxy::GroundSteeringReading wheel;
 

@@ -27,8 +27,8 @@ int32_t main(int32_t argc, char **argv)
         return -1;
     }
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
-    const float FREQ{(commandlineArguments.count("freq") != 0) ? static_cast<float>(std::stof(commandlineArguments["freq"])) : static_cast<float>(30)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
+    // const float FREQ{(commandlineArguments.count("freq") != 0) ? static_cast<float>(std::stof(commandlineArguments["freq"])) : static_cast<float>(30)};
 
     if (VERBOSE)
     {
@@ -50,30 +50,41 @@ int32_t main(int32_t argc, char **argv)
         }
 
         /*global variables*/ //sign vision
-        carlos::semaphore::acc acc_semaphore;
+        // carlos::semaphore::acc acc_semaphore;
         carlos::semaphore::cmd cmd_semaphore;
-        carlos::semaphore::vision::color color_semaphore;
-        carlos::semaphore::vision::object object_semaphore;
+        // carlos::semaphore::vision::color color_semaphore;
+        // carlos::semaphore::vision::object object_semaphore;
         const bool LOCK = false;
         const bool UNLOCK = true;
 
         /* prepare messages to recieve from carlos session */
-        auto adaptive_cruise_control = [VERBOSE](cluon::data::Envelope &&envelope) {
+        auto adaptive_cruise_control = [VERBOSE, &carlos_session, &cmd_semaphore, &LOCK, &UNLOCK](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
-            bool acc_danger = msg.safe_to_drive();
+            bool safe_to_drive = msg.safe_to_drive();
             /*do stuff with data*/
 
-            if (acc_danger)
+            if (safe_to_drive)
             {
-                /*[test] lock wheels*/
-                cmd_semaphore.semaphore(LOCK);
-                carlos.send(cmd_semaphore);
+                /*[test] unlock wheels*/
+                cmd_semaphore.semaphore(UNLOCK);
+                carlos_session.send(cmd_semaphore);
 
                 if (VERBOSE)
                 {
-                    std::cout << "LOCKED -> CMD" << std::endl;
+                    std::cout << "SENT -> UNLOCKED -> CMD" << std::endl;
+                }
+            }
+            else
+            {
+                /*[test] lock wheels*/
+                cmd_semaphore.semaphore(LOCK);
+                carlos_session.send(cmd_semaphore);
+
+                if (VERBOSE)
+                {
+                    std::cout << "SENT -> LOCKED -> CMD" << std::endl;
                 }
             }
         };

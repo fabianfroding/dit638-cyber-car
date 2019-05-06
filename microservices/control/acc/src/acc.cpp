@@ -64,7 +64,19 @@ int32_t main(int32_t argc, char **argv)
         bool SEMAPHORE_KEY = true;
 
         /*sends front sensor messages to carlos delegator*/
-        auto sensors = [VERBOSE, SAFE_DISTANCE, MAX_SPEED, &car_session, &carlos_session, &pedal](cluon::data::Envelope &&envelope) {
+        auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
+            /** unpack message recieved*/
+            auto msg = cluon::extractMessage<carlos::semaphore::acc>(std::move(envelope));
+            /*store data*/
+            SEMAPHORE_KEY = msg.semaphore();
+
+            if (VERBOSE)
+            {
+                std::cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
+            }
+        };
+
+        auto sensors = [VERBOSE, SAFE_DISTANCE, MAX_SPEED, &car_session, &carlos_session, &SEMAPHORE_KEY, &pedal, &acc_status](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -97,21 +109,9 @@ int32_t main(int32_t argc, char **argv)
             }
         };
 
-        auto semaphore = [VERBOSE, &carlos_session, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
-            /** unpack message recieved*/
-            auto msg = cluon::extractMessage<carlos::semaphore::acc>(std::move(envelope));
-            /*store data*/
-            SEMAPHORE_KEY = msg.semaphore();
-
-            if (VERBOSE)
-            {
-                std::cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
-            }
-        };
-
         /*registers callbacks*/
         car_session.dataTrigger(opendlv::proxy::DistanceReading::ID(), sensors);
-        car_session.dataTrigger(carlos::semaphore::acc::ID(), semaphore);
+        carlos_session.dataTrigger(carlos::semaphore::acc::ID(), semaphore);
 
         while (car_session.isRunning())
         {

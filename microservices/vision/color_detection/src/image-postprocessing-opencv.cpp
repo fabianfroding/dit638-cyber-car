@@ -249,7 +249,7 @@ int32_t main(int32_t argc, char **argv)
           drawRectangle(car_rectangle[k], img, greenEdge);
 
           //create the envelope containing this data
-          wheel.position(carlos_converter(getPercentageOfWidth(car_contours[k], img)));
+          wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], img)));
           if (SEMAPHORE_KEY)
           {
             car_session.send(wheel); //send to car

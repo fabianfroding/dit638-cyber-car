@@ -16,6 +16,9 @@ message carlos.vision.sign [id = 3002]{
 message carlos.command [id = 3003]{
   uint16 type [id = 1];
 }
+message carlos.vision.objects [id = 3004] {
+    uint16 nObjects [id = 1];
+}
 
 /*
  * Copyright (C) 2018 Chalmers Revere
@@ -368,6 +371,7 @@ message opendlv.logic.perception.GroundSurfaceArea [id = 1143] {
   float x4 [id = 8];
   float y4 [id = 9];
 }
+
 
 message opendlv.logic.action.AimDirection [id = 1171] {
   float azimuthAngle [id = 1];

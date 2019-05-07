@@ -20,7 +20,6 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
         std::cerr << "Usage:" << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
-        std::cerr << argv[0] << "[--freq=<frequency>]" << std::endl;
         std::cerr << argv[0] << "[--verbose" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--carlos=113 --freq=30" << std::endl;

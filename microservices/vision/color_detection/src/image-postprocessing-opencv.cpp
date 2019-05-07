@@ -46,7 +46,7 @@ double getPerimeterOfContour(vector<Point> contour)
 //draw the rectangle on the frame
 void drawRectangle(Rect rectangle, Mat image, Scalar color)
 {
-  cv::rectangle(image, rectangle.tl(), rectangle.br(), color, 2, 8, 0);
+  cv::rectangle(image, rectangle.tl(), rectangle.br(), color, 1, 8, 0);
 }
 
 float getPercentageOfWidth(vector<Point> contour, Mat image)
@@ -121,7 +121,7 @@ int32_t main(int32_t argc, char **argv)
   Rect temp, empty;
   Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness;
   Mat stop_frame_threshold, stop_detected_edges;
-  Scalar greenEdge = Scalar(0, 255, 0);
+  Scalar edge = Scalar(255, 255, 255);
   Scalar redEdge = Scalar(0, 0, 255);
   //stop sign colors
   //  double area=0, perimeter=0;
@@ -146,7 +146,7 @@ int32_t main(int32_t argc, char **argv)
     cerr << "Example: " << argv[0] << " --carlos=113 --name=img.i420 --width=640 --height=480" << endl;
   }
   else
-  {
+    {
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const string NAME{commandlineArguments["name"]};
@@ -176,13 +176,7 @@ int32_t main(int32_t argc, char **argv)
         auto msg = cluon::extractMessage<carlos::semaphore::vision::color>(std::move(envelope));
         /*store data*/
         SEMAPHORE_KEY = msg.semaphore();
-
-        if (VERBOSE)
-        {
-          std::cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
-        }
       };
-
       /*registered callback*/
       carlos_session.dataTrigger(carlos::semaphore::vision::color::ID(), semaphore);
 
@@ -247,11 +241,8 @@ int32_t main(int32_t argc, char **argv)
               printRectangleLocation(car_contours[k], img, "car"); //coordinates and position of the center of each rectangle
               //numberOfCars++;
             }
-
             groupRectangles(car_rectangle, 1, 0.8); //group overlapping rectangles
-            /*if(numberOfCars>0)
-                    cout<<"There are currently "<<numberOfCars<<" cars detected"<<endl<<flush;*/
-            drawRectangle(car_rectangle[k], img, greenEdge);
+            drawRectangle(car_rectangle[k], resizedImg, edge);
 
             //create the envelope containing this data
             wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], img)));
@@ -271,12 +262,10 @@ int32_t main(int32_t argc, char **argv)
         if (VERBOSE)
         {
           imshow(sharedMemory->name().c_str(), resizedImg);
+          cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
           waitKey(1);
         }
       }
     }
-    retCode = 0;
   }
-
-  return retCode;
 }

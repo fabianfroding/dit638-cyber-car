@@ -16,6 +16,15 @@ using namespace std;
 using namespace cv;
 using namespace cluon;
 
+float carlos_converter(float num)
+{
+  float res = 0;
+  float wheel_range = 1.2;
+  res = ((num * 100) * wheel_range) / 100;
+  res = -1 * (res - (wheel_range / 2));
+  return static_cast<float>(res);
+}
+
 //return the center of a contour -> Point(x,y)
 Point getCenterOfContour(vector<Point> contour)
 {
@@ -94,21 +103,12 @@ vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_h
   Mat blur, frame_threshold, detected_edges;
   vector<Vec4i> hierarchy;
   vector<vector<Point>> contours;
-  medianBlur(hsvImage, blur, 13);
+  medianBlur(hsvImage, blur, 11);
   inRange(blur, Scalar(color_low), Scalar(color_high), frame_threshold);
-  Canny(frame_threshold, detected_edges, 0, 0, 5, true);
-  findContours(detected_edges, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+  Canny(frame_threshold, detected_edges, 0, 0, 5, false);
+  findContours(detected_edges, contours, hierarchy, RETR_TREE, CHAIN_APPROX_NONE, Point(0, 0));
   //cout<<"there are "<<hierarchy.size()<<" objects detected"<<endl<<flush;
   return contours;
-}
-
-float carlos_converter(float num)
-{
-  float res = NULL;
-  float wheel_range = 1.2;
-  res = ((num * 100) * wheel_range) / 100;
-  res = -1 * (res - (wheel_range / 2));
-  return res;
 }
 
 int32_t main(int32_t argc, char **argv)
@@ -119,7 +119,7 @@ int32_t main(int32_t argc, char **argv)
   vector<Rect> car_rectangle, stop_rectangle;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
   Rect temp, empty;
-  Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur;
+  Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness;
   Mat stop_frame_threshold, stop_detected_edges;
   Scalar greenEdge = Scalar(0, 255, 0);
   Scalar redEdge = Scalar(0, 0, 255);
@@ -202,10 +202,11 @@ int32_t main(int32_t argc, char **argv)
           // lock/unlock.
           Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory->data());
           img = wrapped.clone();
-          cvtColor(img, img_hsv, CV_BGR2HSV);
         }
         sharedMemory->unlock();
-
+        resize(img, resizedImg, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
+        //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
+        cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         //GaussianBlur(img_hsv,blur,Size(1,1),0,0,borderType);
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
@@ -216,56 +217,60 @@ int32_t main(int32_t argc, char **argv)
         stop_rectangle.resize(stop_contours.size());
 
         //**PROCESS STOP SIGNAL DETECTION**
-        for (size_t k = 0; k < stop_contours.size(); k++)
-        {
-          approxPolyDP(stop_contours[k], stop_polygons[k], 3, true);
-          if (contourArea(stop_contours[k]) > 2500 && arcLength(stop_contours[k], true) > 150)
+        /*  if(stop_contours.size()>0)
+          for (size_t k = 0; k < stop_contours.size(); k++)
           {
-            stop_rectangle[k] = boundingRect(stop_polygons[k]);
-            printRectangleLocation(stop_contours[k], img, "stop"); //coordinates and position of the center of each rectangle
-          }
-          groupRectangles(stop_rectangle, 1, 0.8); //group overlapping rectangles
-          //cout<<"There are currently "<<stop_rectangle.size()<<" rectangles"<<endl<<flush;
-          drawRectangle(stop_rectangle[k], img, redEdge);
+            approxPolyDP(stop_contours[k], stop_polygons[k], 3, true);
+            if (arcLength(stop_contours[k], true) > 100)
+            {
+              stop_rectangle[k] = boundingRect(stop_polygons[k]);
+              //printRectangleLocation(stop_contours[k], img, "stop"); //coordinates and position of the center of each rectangle
+            }
+            groupRectangles(stop_rectangle, 1, 0.8); //group overlapping rectangles
+            //cout<<"There are currently "<<stop_rectangle.size()<<" rectangles"<<endl<<flush;
+            drawRectangle(stop_rectangle[k], resizedImg, redEdge);
 
-          sign_tracker.type(1);
-          sign_tracker.area(boundingRect(stop_polygons[k]).area());
-          carlos_session.send(sign_tracker);
-        }
+            sign_tracker.type(1);
+            sign_tracker.area(boundingRect(stop_polygons[k]).area());
+            sign_tracker.cos(carlos_converter(getPercentageOfWidth(stop_contours[k],resizedImg)));
+            vision_color.send(sign_tracker);
+          }*/
 
         //**PROCESS CAR GREEN DETECTION**
-        for (size_t k = 0; k < car_contours.size(); k++)
-        {
-          approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-          if (contourArea(car_contours[k]) > 300 && arcLength(car_contours[k], true) > 150)
+        if (car_contours.size() > 0)
+          for (size_t k = 0; k < car_contours.size(); k++)
           {
-            car_rectangle[k] = boundingRect(car_polygons[k]);
-            printRectangleLocation(car_contours[k], img, "car"); //coordinates and position of the center of each rectangle
-            //numberOfCars++;
-          }
-          groupRectangles(car_rectangle, 1, 0.8); //group overlapping rectangles
-          /*if(numberOfCars>0)
+            approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
+            if (arcLength(car_contours[k], false) > 100)
+            {
+              car_rectangle[k] = boundingRect(car_polygons[k]);
+              printRectangleLocation(car_contours[k], img, "car"); //coordinates and position of the center of each rectangle
+              //numberOfCars++;
+            }
+
+            groupRectangles(car_rectangle, 1, 0.8); //group overlapping rectangles
+            /*if(numberOfCars>0)
                     cout<<"There are currently "<<numberOfCars<<" cars detected"<<endl<<flush;*/
-          drawRectangle(car_rectangle[k], img, greenEdge);
+            drawRectangle(car_rectangle[k], img, greenEdge);
 
-          //create the envelope containing this data
-          wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], img)));
-          if (SEMAPHORE_KEY)
-          {
-            car_session.send(wheel); //send to car
+            //create the envelope containing this data
+            wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], img)));
+            if (SEMAPHORE_KEY)
+            {
+              car_session.send(wheel); //send to car
+            }
+            car_tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
+            car_tracker.area(car_rectangle[k].area());                   //area
+            car_tracker.queue(-1);                                       //number of cars queued
+
+            carlos_session.send(car_tracker); //send the message to the delegator
           }
-          car_tracker.coc(getPercentageOfWidth(car_contours[k], img)); //center of car
-          car_tracker.area(car_rectangle[k].area());                   //area
-          car_tracker.queue(-1);                                       //number of cars queued
-
-          carlos_session.send(car_tracker); //send the message to the delegator
-        }
 
         //message sending stopped
         // Display image.
         if (VERBOSE)
         {
-          imshow(sharedMemory->name().c_str(), img);
+          imshow(sharedMemory->name().c_str(), resizedImg);
           waitKey(1);
         }
       }

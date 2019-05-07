@@ -11,8 +11,6 @@
 #include "cluon-complete.hpp"
 #include "messages.hpp"
 
-float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE);
-
 float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE)
 {
     const float neutral = 0.0;

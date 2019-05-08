@@ -52,7 +52,7 @@ int main(int argc, const char** argv) {
 void detectAndDisplay(Mat frame) {
     Mat frame_gray;
     cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
-    equalizeHist(frame_gray, frame_gray);
+    equalizeHist(frame_gray, frame_gray); //equalize greyscale histogram
 
     //-- Detect cars
     std::vector<Rect> cars;

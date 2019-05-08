@@ -47,6 +47,6 @@ RUN echo http://dl-4.alpinelinux.org/alpine/v3.8/main > /etc/apk/repositories &&
         libcanberra-gtk3
 
 WORKDIR /usr/bin
-COPY --from=builder /tmp/bin/image-postprocessing-opencv .
-ENTRYPOINT ["/usr/bin/image-postprocessing-opencv"]
+COPY --from=builder /tmp/bin/color .
+ENTRYPOINT ["/usr/bin/color"]
 

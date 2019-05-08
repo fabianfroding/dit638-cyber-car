@@ -14,3 +14,4 @@
 3. [Software Architecture](#placeholder)
 4. [Project Organization](#placeholder)
 5. [Hardware/Software integration](#placeholder)
+6. [Microservices](./microservices/README.md)

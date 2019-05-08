@@ -30,7 +30,13 @@ int32_t main(int32_t argc, char **argv)
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const float TURN{(commandlineArguments.count("turn") != 0) ? static_cast<float>(std::stof(commandlineArguments["turn"])) : static_cast<float>(0.2)};
+    const float SP{(commandlineArguments.count("speed") != 0) ? static_cast<float>(std::stof(commandlineArguments["speed"])) : static_cast<float>(0.14)};
+    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(1)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
+
+    float turn = TURN;
+    float speed = SP;
+    uint16_t delay_time = DELAY;
 
     if (VERBOSE)
     {
@@ -57,13 +63,14 @@ int32_t main(int32_t argc, char **argv)
         * set up messages that you might send
         */
 
-        carlos::command cmd;                         //[carlos] turn_type
+        //carlos::command cmd;                         //[carlos] turn_type
         opendlv::proxy::GroundSteeringRequest wheel; //[car] groundSteering
+        opendlv::proxy::PedalPositionRequest pedal;  //[car] pedal position
 
         bool SEMAPHORE_KEY = true;
-        const int16_t left = 2, right = 1, neutral = 0;
-        const float turnRight = TURN * -1, turnLeft = TURN, turnStraight = 0;
-        int userInp = -1;
+        //const int16_t left = 2, right = 1, neutral = 0;
+        //const float turnRight = TURN * -1, turnLeft = TURN, turnStraight = 0;
+        //int userInp = -1;
 
         auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
@@ -78,7 +85,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         carlos_session.dataTrigger(carlos::semaphore::cmd::ID(), semaphore);
-
+        /*
         while (car_session.isRunning())
         {
             std::cout << "press: " << std::endl;
@@ -113,6 +120,35 @@ int32_t main(int32_t argc, char **argv)
             }
 
             carlos_session.send(cmd);
+        }*/
+        while (true)
+        {
+            std::cout << "turn angle:" << std::endl;
+            scanf("%f", &turn);
+            std::cout << "speed:" << std::endl;
+            scanf("%f", &speed);
+            std::cout << "delay:" << std::endl;
+            scanf("%hd", &delay_time);
+
+            //turn wheel
+            wheel.groundSteering(turn);
+            car_session.send(wheel);
+
+            //speed
+            pedal.position(speed);
+            car_session.send(pedal);
+
+            //delay
+            std::chrono::milliseconds timer(delay_time); // or whatever
+            std::this_thread::sleep_for(timer);
+
+            //stop vehicle
+            pedal.position(0);
+            car_session.send(pedal);
+
+            //straighten wheel
+            wheel.groundSteering(0);
+            car_session.send(wheel);
         }
     }
     else

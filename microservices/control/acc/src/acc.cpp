@@ -27,7 +27,7 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--sd=<front/back safety space>]" << std::endl;
         std::cerr << argv[0] << "[--sp=<speed, min is 0.13 and max is 0.8>]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
-        std::cerr << "example:  " << argv[0] << " --cid=112 --sd=0.2 --sp=013" << std::endl;
+        std::cerr << "example:  " << argv[0] << " --cid=112 --carlos=113 --sd=0.2 --sp=013" << std::endl;
         return -1;
     }
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
@@ -42,78 +42,111 @@ int32_t main(int32_t argc, char **argv)
         std::cout << "speed: [" << MAX_SPEED << "], front saftey distance: [" << SAFE_DISTANCE << " meters]" << std::endl;
     }
 
-    /**
-     * create a od4session object that will allow all microservices
-     * with the same secret number to send and recieve messages from
-     * one another
-    */
-
     cluon::OD4Session carlos_session{CARLOS_SESSION}; //needed to send messages to carlos session
-    cluon::OD4Session car_session{CID};               //needed to recieve data from sensors
+    cluon::OD4Session kiwi_session{CID};              //needed to recieve data from sensors
 
-    if (car_session.isRunning())
+    if (kiwi_session.isRunning())
     {
         if (VERBOSE)
         {
             std::cout << "[acc] micro-service started..." << std::endl;
         }
 
-        carlos::acc acc_status;                     //danger (if distance is below saftey distance)
-        opendlv::proxy::PedalPositionRequest pedal; //position (speed of vehicle)
+        bool SEMAPHORE = true;
+        int16_t STAGE = 0;
 
-        bool SEMAPHORE_KEY = true;
-
-        /*sends front sensor messages to carlos delegator*/
-        auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
+        /*callbacks*/
+        auto get_status = [VERBOSE, &SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
-            auto msg = cluon::extractMessage<carlos::semaphore::acc>(std::move(envelope));
+            auto msg = cluon::extractMessage<carlos::acc::status>(std::move(envelope));
             /*store data*/
-            SEMAPHORE_KEY = msg.semaphore();
+            SEMAPHORE = msg.semaphore();
+            STAGE = msg.stage();
 
             if (VERBOSE)
             {
-                std::cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
+                if (SEMAPHORE)
+                {
+                    std::cout << "RECIEVED -> SEMAPHORE [UNLOCKED]" << std::endl;
+                }
+                else
+                {
+                    std::cout << "RECIEVED -> SEMAPHORE [LOCKED]" << std::endl;
+                }
             }
         };
 
-        auto sensors = [VERBOSE, SAFE_DISTANCE, MAX_SPEED, &car_session, &carlos_session, &SEMAPHORE_KEY, &pedal, &acc_status](cluon::data::Envelope &&envelope) {
+        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, MAX_SPEED, &kiwi_session, &carlos_session, &SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
-            const uint16_t senderStamp = envelope.senderStamp();
-            /*store sender data*/
-            float distance = msg.distance();
+            const uint16_t senderStamp = envelope.senderStamp(), front_sensor = 0, left_sensor = 1;
+            /*store sensor data*/
+            float sensor = msg.distance();
+            /*other variables*/
+            float speed = autoPedal(sensor, SAFE_DISTANCE, MAX_SPEED, VERBOSE);
+            /*messages to carlos session*/
+            carlos::acc::collision collision_status;
+            carlos::acc::trigger trigger;
+            /*messages to kiwi session*/
+            opendlv::proxy::PedalPositionRequest pedal;
 
-            if (senderStamp == 0)
+            switch (senderStamp)
             {
-                /**
-                 * only get data fron sender 0 (front sensor)
-                 * */
-
-                /*get front sensor value*/
-                float frontSensor = distance;
-                /*do stuff with data*/
-
-                /*pedal*/
-                float speed = autoPedal(frontSensor, SAFE_DISTANCE, MAX_SPEED, VERBOSE);
-                pedal.position(speed);
-                if (SEMAPHORE_KEY)
+            case front_sensor:
+                /* front sensor */
+                switch (STAGE)
                 {
-                    car_session.send(pedal);
-                }
+                case 1:
+                    /* intersection detected */
+                    pedal.position(speed);
 
-                /*acc status*/
-                acc_status.safe_to_drive((frontSensor > SAFE_DISTANCE) ? true : false); //if front sensor is safe, set to true, else set to false
-                /*send object to carlos delegator*/
-                carlos_session.send(acc_status);
+                    collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
+                    carlos_session.send(collision_status);
+                    break;
+
+                case 2:
+                    /* at intersection */
+                    trigger.front_sensor(sensor);
+                    carlos_session.send(trigger);
+                    pedal.position(0); //car should never move in stage 2
+                    break;
+
+                case 3:
+                    collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
+                    carlos_session.send(collision_status);
+                    break;
+
+                default:
+                    /* no stages have been engaged */
+                    pedal.position(speed);
+                    collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
+                    carlos_session.send(collision_status);
+                    break;
+                }
+                break;
+
+            case left_sensor:
+                if (STAGE == 2)
+                { /* at intersection */
+                    trigger.left_sensor(sensor);
+                    carlos_session.send(trigger);
+                    pedal.position(0); //car should never move in stage 2
+                }
+                break;
+            }
+
+            if (SEMAPHORE)
+            {
+                kiwi_session.send(pedal);
             }
         };
 
         /*registers callbacks*/
-        car_session.dataTrigger(opendlv::proxy::DistanceReading::ID(), sensors);
-        carlos_session.dataTrigger(carlos::semaphore::acc::ID(), semaphore);
+        carlos_session.dataTrigger(carlos::acc::status::ID(), get_status);
+        kiwi_session.dataTrigger(opendlv::proxy::DistanceReading::ID(), get_sensor_information);
 
-        while (car_session.isRunning())
+        while (kiwi_session.isRunning())
         {
             /* just run this microservice until ist crashes */
         }

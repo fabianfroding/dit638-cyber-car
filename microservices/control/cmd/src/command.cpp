@@ -121,7 +121,7 @@ int32_t main(int32_t argc, char **argv)
 
             carlos_session.send(cmd);
         }*/
-        while (true)
+        while (car_session.isRunning())
         {
             std::cout << "turn angle:" << std::endl;
             scanf("%f", &turn);
@@ -149,6 +149,14 @@ int32_t main(int32_t argc, char **argv)
             //straighten wheel
             wheel.groundSteering(0);
             car_session.send(wheel);
+
+            // if (STAGE == 3)
+            // {
+            //     /*temporary left turn*/
+            //     wheel.groundSteering(0.4);
+            //     pedal.position(speed);
+            //     /*end of temporary code*/
+            // }
         }
     }
     else

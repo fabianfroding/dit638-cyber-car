@@ -20,7 +20,6 @@ message carlos.acc.trigger [id=2012]{
 }
 
 /*CMD 2020*/
-
 message carlos.cmd.status [id=2020]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];

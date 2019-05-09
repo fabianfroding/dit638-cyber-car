@@ -4,6 +4,7 @@
 
 #include "cluon-complete.hpp"
 #include "opendlv-standard-message-set.hpp"
+#include "envelopes.hpp"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -146,7 +147,7 @@ int32_t main(int32_t argc, char **argv)
     cerr << "Example: " << argv[0] << " --carlos=113 --name=img.i420 --width=640 --height=480" << endl;
   }
   else
-    {
+  {
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const string NAME{commandlineArguments["name"]};
@@ -194,7 +195,7 @@ int32_t main(int32_t argc, char **argv)
           // the camera to provide the next frame. Thus, any
           // computationally heavy algorithms should be placed outside
           // lock/unlock.
-          Mat wrapped(HEIGHT-30, WIDTH, CV_8UC4, sharedMemory->data());
+          Mat wrapped(HEIGHT - 30, WIDTH, CV_8UC4, sharedMemory->data());
           img = wrapped.clone();
         }
         sharedMemory->unlock();

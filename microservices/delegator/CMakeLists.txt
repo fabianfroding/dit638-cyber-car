@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
 #configure template for messages 
 set(OPENDLV_MESSAGE_SET messages.odvd)
+set(CARLOS_MESSAGE_SET envelopes.odvd)
 set(CLUON_COMPLETE cluon-complete.hpp)
 
 #configure required libraries
@@ -33,10 +34,18 @@ add_custom_target(messages.hpp
     COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp --out=${CMAKE_BINARY_DIR}/messages.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_MESSAGE_SET}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_MESSAGE_SET} ${CMAKE_BINARY_DIR}/cluon-msc)
 
+################################################################################
+# Generate envelopes.hpp using cluon-msc
+add_custom_target(envelopes.hpp
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp --out=${CMAKE_BINARY_DIR}/envelopes.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${CARLOS_MESSAGE_SET}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${CARLOS_MESSAGE_SET} ${CMAKE_BINARY_DIR}/cluon-msc)
+
 include_directories(SYSTEM ${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # executable
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/delegator.cpp)
 add_dependencies(${PROJECT_NAME} messages.hpp)
+add_dependencies(${PROJECT_NAME} envelopes.hpp)
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})

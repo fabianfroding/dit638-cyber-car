@@ -10,6 +10,7 @@
 
 #include "cluon-complete.hpp"
 #include "messages.hpp"
+#include "envelopes.hpp"
 
 float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE);
 

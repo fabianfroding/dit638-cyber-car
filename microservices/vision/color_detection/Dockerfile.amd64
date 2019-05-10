@@ -49,4 +49,3 @@ RUN echo http://dl-4.alpinelinux.org/alpine/v3.8/main > /etc/apk/repositories &&
 WORKDIR /usr/bin
 COPY --from=builder /tmp/bin/color .
 ENTRYPOINT ["/usr/bin/color"]
-

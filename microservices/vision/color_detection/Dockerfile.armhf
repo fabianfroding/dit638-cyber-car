@@ -55,4 +55,5 @@ RUN [ "cross-build-end" ]
 
 WORKDIR /usr/bin
 COPY --from=builder /tmp/bin/color .
+COPY src/cascade.xml .
 ENTRYPOINT ["/usr/bin/color"]

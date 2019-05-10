@@ -32,5 +32,6 @@ RUN apk update && \
     mkdir /opt
 WORKDIR /opt
 COPY --from=builder /tmp/object_detection .
+COPY src/cascade.xml .
 RUN [ "cross-build-end" ]
 CMD ["/bin/sh","-c","/opt/object_detection --cid=112 --verbose"]

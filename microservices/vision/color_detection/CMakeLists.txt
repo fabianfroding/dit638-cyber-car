@@ -101,7 +101,6 @@ set(LIBRARIES ${LIBRARIES} ${OpenCV_LIBS})
 ################################################################################
 # Create executable.
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/${PROJECT_NAME}.cpp ${CMAKE_BINARY_DIR}/opendlv-standard-message-set.hpp)
-add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/${PROJECT_NAME}.cpp ${CMAKE_BINARY_DIR}/envelopes.hpp)
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
 ################################################################################

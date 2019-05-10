@@ -91,7 +91,7 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(services.object);
             }
 
-            if (VERBOSE && ACC)
+            if (VERBOSE || ACC)
             {
                 std::cout << "INBOX -> ACC collision warning:[" << collision_warning << "]" << std::endl;
             }
@@ -105,7 +105,7 @@ int32_t main(int32_t argc, char **argv)
             front_trigger = msg.front_sensor();
             left_trigger = msg.left_sensor();
 
-            if (VERBOSE && ACC)
+            if (VERBOSE || ACC)
             {
                 std::cout << "INBOX -> ACC intersection triggers. FRONT [" << front_trigger << "], LEFT [" << left_trigger << "]" << std::endl;
             }
@@ -118,7 +118,7 @@ int32_t main(int32_t argc, char **argv)
             /*store speed and front_sensor value from acc microservice*/
             path = msg.turn();
 
-            if (VERBOSE && CMD)
+            if (VERBOSE || CMD)
             {
                 std::cout << "INBOX -> CMD intersection path [" << path << "]" << std::endl;
             }
@@ -132,7 +132,7 @@ int32_t main(int32_t argc, char **argv)
             sign_detected = msg.detected();
             sign_reached = msg.reached();
 
-            if (VERBOSE && OBJECT)
+            if (VERBOSE || OBJECT)
             {
                 std::cout << "INBOX -> Object Detection. SIGN DETECTED [" << sign_detected << "], SIGN REACHED [" << sign_reached << "]" << std::endl;
             }
@@ -146,7 +146,7 @@ int32_t main(int32_t argc, char **argv)
             lead_car_coc = msg.coc();
             lead_car_area = msg.area();
 
-            if (VERBOSE && COLOR)
+            if (VERBOSE || COLOR)
             {
                 std::cout << "INBOX -> COLOR Detection. Center Of Car [" << lead_car_coc << "], Area of Car [" << lead_car_area << "]" << std::endl;
             }
@@ -161,7 +161,7 @@ int32_t main(int32_t argc, char **argv)
             east = msg.east();
             west = msg.west();
 
-            if (VERBOSE && COLOR)
+            if (VERBOSE || COLOR)
             {
                 std::cout << "INBOX -> COLOR Detection. North [" << north << "], EAST [" << east << "]"
                           << "], WEST [" << west << "]" << std::endl;
@@ -221,7 +221,7 @@ int32_t main(int32_t argc, char **argv)
             if (!(north && east && west))
             {
                 /*if north, east and west flags are false*/
-                STAGE = 2;
+                STAGE = 3;
                 if (VERBOSE)
                 {
                     std::cout << " STAGE set to [" << STAGE << "]" << std::endl;

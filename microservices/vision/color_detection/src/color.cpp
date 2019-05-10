@@ -4,7 +4,6 @@
 
 #include "cluon-complete.hpp"
 #include "opendlv-standard-message-set.hpp"
-#include "envelopes.hpp"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -42,7 +41,7 @@ int32_t main(int32_t argc, char **argv)
   //  double area=0, perimeter=0;
   double stop_low_H = 151, stop_high_H = 172, stop_low_S = 61, stop_high_S = 255, stop_low_V = 52, stop_high_V = 255; //,sensitivity=0;
   //car sticker colors
-  double car_low_H = 40, car_high_H = 70, car_low_S = 60, car_high_S = 255, car_low_V = 60, car_high_V = 255; //,sensitivity=0;
+  double car_low_H = 40, car_high_H = 94, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
   Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
@@ -82,6 +81,7 @@ int32_t main(int32_t argc, char **argv)
       opendlv::proxy::GroundSteeringRequest wheel;
       carlos::color::lead_car lead_car;
       carlos::color::intersection intersection_tracker;
+      carlos::color::status status;
 
       // carlos::vision::sign sign_tracker;
 
@@ -116,8 +116,8 @@ int32_t main(int32_t argc, char **argv)
         }
         sharedMemory->unlock();
         resize(img, resizedImg, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
-        resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
-        cvtColor(img_higher_brightness, img_hsv, CV_BGR2HSV);
+        //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
+        cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         //GaussianBlur(img_hsv,blur,Size(1,1),0,0,borderType);
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
@@ -152,13 +152,13 @@ int32_t main(int32_t argc, char **argv)
           for (size_t k = 0; k < car_contours.size(); k++)
           {
             approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-            if (arcLength(car_contours[k], false) > 150)
+            if (arcLength(car_contours[k], false) > 120)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               printRectangleLocation(car_contours[k], resizedImg, "car"); //coordinates and position of the center of each rectangle
               //numberOfCars++;
             }
-            groupRectangles(car_rectangle, 1, 0.8); //group overlapping rectangles
+            groupRectangles(car_rectangle, 1, 0.6); //group overlapping rectangles
             drawRectangle(car_rectangle[k], resizedImg, edge);
 
             //create the envelope containing this data

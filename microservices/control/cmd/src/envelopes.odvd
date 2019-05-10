@@ -25,6 +25,7 @@ message carlos.cmd.status [id = 3200]{
 
 message carlos.cmd.path [id = 3201]{
   uint16 turn [id = 1];
+  /*1 = left, 2 = right, 0 = straight*/
 }
 
 message carlos.object.status [id = 3300]{
@@ -32,19 +33,24 @@ message carlos.object.status [id = 3300]{
   uint16 stage [id = 2];
 }
 
+message carlos.object.sign [id = 3301]{
+  bool detected [id = 1];
+  bool reached [id = 2];
+  uint16 type [id = 3];
+}
+
 message carlos.color.status [id = 3400]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];
 }
 
-message carlos.vision.color [id = 3500]{
+message carlos.color.lead_car [id = 3401]{
   float coc [id = 1];
   float area [id = 2];
-  uint16 queue [id = 3];
 }
 
-message carlos.vision.object [id = 3600]{
-  uint16 type [id = 1];
-  float area [id = 2];
-  float cos [id=3];
+message carlos.color.intersection [id = 3402]{
+  bool north [id = 1];
+  bool east [id = 2];
+  bool west [id = 3];
 }

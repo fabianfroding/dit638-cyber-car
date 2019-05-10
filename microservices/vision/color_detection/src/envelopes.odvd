@@ -4,48 +4,53 @@
  * and should be distributed at YOUR OWN RISK.
 */
 
-/* ACC 2010*/
-message carlos.acc.status [id=2010]{
+message carlos.acc.status [id = 3100]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];
 }
 
-message carlos.acc.collision [id=2011]{
+message carlos.acc.collision [id = 3101]{
   bool collision_warning [id = 1];
 }
 
-message carlos.acc.trigger [id=2012]{
+message carlos.acc.trigger [id = 3102]{
   bool front_sensor [id = 1];
   bool left_sensor [id = 2];
 }
 
-/*CMD 2020*/
-
-message carlos.cmd.status [id=2020]{
+message carlos.cmd.status [id = 3200]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];
 }
 
-/*OBJECT 2030*/
-message carlos.object.status [id=2030]{
+message carlos.cmd.path [id = 3201]{
+  uint16 turn [id = 1];
+  /*1 = left, 2 = right, 0 = straight*/
+}
+
+message carlos.object.status [id = 3300]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];
 }
 
-/*COLOR 2040*/
-message carlos.color.status [id=2040]{
+message carlos.object.sign [id = 3301]{
+  bool detected [id = 1];
+  bool reached [id = 2];
+  uint16 type [id = 3];
+}
+
+message carlos.color.status [id = 3400]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];
 }
 
-message carlos.vision.car [id = 3001]{
+message carlos.color.lead_car [id = 3401]{
   float coc [id = 1];
   float area [id = 2];
-  uint16 queue [id = 3];
 }
 
-message carlos.vision.sign [id = 3002]{
-  uint16 type [id = 1];
-  float area [id = 2];
-  float cos [id=3];
+message carlos.color.intersection [id = 3402]{
+  bool north [id = 1];
+  bool east [id = 2];
+  bool west [id = 3];
 }

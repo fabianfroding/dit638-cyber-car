@@ -28,13 +28,6 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/cluon-msc
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${CLUON_COMPLETE})
 
 ################################################################################
-# Generate message.hpp using cluon-msc
-add_custom_target(messages.hpp
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp --out=${CMAKE_BINARY_DIR}/messages.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_MESSAGE_SET}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_MESSAGE_SET} ${CMAKE_BINARY_DIR}/cluon-msc)
-
-################################################################################
 # Generate envelopes.hpp using cluon-msc
 add_custom_target(envelopes.hpp
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -46,6 +39,5 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # executable
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/delegator.cpp)
-add_dependencies(${PROJECT_NAME} messages.hpp)
 add_dependencies(${PROJECT_NAME} envelopes.hpp)
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})

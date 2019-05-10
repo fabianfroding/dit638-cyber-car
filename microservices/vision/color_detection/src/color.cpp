@@ -82,7 +82,7 @@ int32_t main(int32_t argc, char **argv)
       carlos::color::lead_car car_tracker;
       carlos::color::intersection intersection_tracker;
       carlos::color::status status;
-      
+
 
       // carlos::vision::sign sign_tracker;
 
@@ -96,7 +96,7 @@ int32_t main(int32_t argc, char **argv)
         SEMAPHORE_KEY = msg.semaphore();
       };
       /*registered callback*/
-      carlos_session.dataTrigger(carlos::semaphore::vision::color::ID(), semaphore);
+      //carlos_session.dataTrigger(carlos::semaphore::vision::color::ID(), semaphore);
 
       // Endless loop; end the program by pressing Ctrl-C.
       while (carlos_session.isRunning() || car_session.isRunning())

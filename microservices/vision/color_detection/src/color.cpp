@@ -80,15 +80,17 @@ int32_t main(int32_t argc, char **argv)
       cluon::OD4Session car_session{CID_SESSION};
 
       opendlv::proxy::GroundSteeringRequest wheel;
-      carlos::vision::car car_tracker;
-      carlos::vision::sign sign_tracker;
+      carlos::color::lead_car car_tracker;
+      carlos::color::intersection intersection_tracker;
+
+      // carlos::vision::sign sign_tracker;
 
       bool SEMAPHORE_KEY = true;
 
       /*prepared callback*/
       auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
         /** unpack message recieved*/
-        auto msg = cluon::extractMessage<carlos::semaphore::vision::color>(std::move(envelope));
+        auto msg = cluon::extractMessage<carlos::color::status>(std::move(envelope));
         /*store data*/
         SEMAPHORE_KEY = msg.semaphore();
       };
@@ -166,8 +168,7 @@ int32_t main(int32_t argc, char **argv)
               car_session.send(wheel); //send to car
             }
             car_tracker.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
-            car_tracker.area(car_rectangle[k].area());                          //area
-            car_tracker.queue(-1);                                              //number of cars queued
+            car_tracker.area(car_rectangle[k].area());                          //area                            //number of cars queued
 
             carlos_session.send(car_tracker); //send the message to the delegator
           }

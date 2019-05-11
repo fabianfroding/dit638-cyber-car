@@ -41,6 +41,9 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cout << "starting up " << argv[0] << "..." << std::endl;
         std::cout << "turn: [" << TURN << "]" << std::endl;
+        std::cout << "speed: [" << SP << "]" << std::endl;
+        std::cout << "delay: [" << DELAY << "]" << std::endl;
+        std::cout << "turn: [" << TURN << "]" << std::endl;
     }
 
     cluon::OD4Session carlos_session{CARLOS_SESSION};

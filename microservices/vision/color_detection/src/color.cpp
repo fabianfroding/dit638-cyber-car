@@ -4,6 +4,7 @@
 
 #include "cluon-complete.hpp"
 #include "opendlv-standard-message-set.hpp"
+#include "envelopes.hpp"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>

@@ -57,4 +57,3 @@ WORKDIR /usr/bin
 COPY --from=builder /tmp/bin/obj-detect .
 COPY src/cascade.xml .
 ENTRYPOINT ["/usr/bin/obj-detect"]
-

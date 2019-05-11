@@ -1,3 +1,25 @@
+/**
+ * Copyright (C) Carlos, the car
+ * This software was created by students at the software engineering and management class of 2020
+ * and should be distributed at YOUR OWN RISK.
+*/
+
+message carlos.vision.car [id = 3001]{
+  float coc [id = 1];
+  float area [id = 2];
+  uint16 queue [id = 3];
+}
+message carlos.vision.sign [id = 3002]{
+  uint16 type [id = 1];
+  float area [id = 2];
+}
+message carlos.command [id = 3003]{
+  uint16 type [id = 1];
+}
+message carlos.vision.objects [id = 3004] {
+    uint16 nObjects [id = 1];
+}
+
 /*
  * Copyright (C) 2018 Chalmers Revere
  *
@@ -259,7 +281,7 @@ message opendlv.system.NetworkStatusMessage [id = 1102] {
 }
 
 message opendlv.system.LogMessage [id = 1103] {
-  uint8 level [default = 6, id = 1]; // based on syslog: 0 = Emergency, 1 = Alert, 2 = Critical, 3 = Error, 4 = Warning, 5 = Notice, 6 = Informational, 7 = Debug
+  uint8 level [default = 6, id = 1]; // based on syslog: 0 = Emergency, 1 = Alert, 2 = Critical, 3 = Error, 4 = Warning, 5 = Notice, 6 = Informational, 7 = Debug   
   string description [id = 2];
 }
 
@@ -290,6 +312,8 @@ message opendlv.logic.sensation.Equilibrioception [id = 1017] {
   float pitchRate [id = 5];
   float yawRate [id = 6];
 }
+
+
 
 message opendlv.logic.perception.Object [id = 1130] {
   uint32 objectId [id = 1];
@@ -348,6 +372,7 @@ message opendlv.logic.perception.GroundSurfaceArea [id = 1143] {
   float y4 [id = 9];
 }
 
+
 message opendlv.logic.action.AimDirection [id = 1171] {
   float azimuthAngle [id = 1];
   float zenithAngle [id = 2];
@@ -371,61 +396,4 @@ message opendlv.logic.cognition.GroundSteeringLimit [id = 1191] {
 
 message opendlv.logic.cognition.GroundSpeedLimit [id = 1192] {
   float speedLimit [id = 1];
-}
-
-/**
- * Copyright (C) Carlos, the car
- * This software was created by students at the software engineering and management class of 2020
- * and should be distributed at YOUR OWN RISK.
-*/
-
-message carlos.acc.status [id = 3100]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
-}
-
-message carlos.acc.collision [id = 3101]{
-  bool collision_warning [id = 1];
-}
-
-message carlos.acc.trigger [id = 3102]{
-  bool front_sensor [id = 1];
-  bool left_sensor [id = 2];
-}
-
-message carlos.cmd.status [id = 3200]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
-}
-
-message carlos.cmd.path [id = 3201]{
-  uint16 turn [id = 1];
-  /*1 = left, 2 = right, 0 = straight*/
-}
-
-message carlos.object.status [id = 3300]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
-}
-
-message carlos.object.sign [id = 3301]{
-  bool detected [id = 1];
-  bool reached [id = 2];
-  uint16 type [id = 3];
-}
-
-message carlos.color.status [id = 3400]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
-}
-
-message carlos.color.lead_car [id = 3401]{
-  float coc [id = 1];
-  float area [id = 2];
-}
-
-message carlos.color.intersection [id = 3402]{
-  bool north [id = 1];
-  bool east [id = 2];
-  bool west [id = 3];
 }

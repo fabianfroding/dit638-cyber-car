@@ -1,4 +1,4 @@
-# Shared Copyright (C) 2019  Christian Berger & Carlos
+# Copyright (C) 2019  Christian Berger
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ project(obj-detect)
 ################################################################################
 # Defining the relevant versions of OpenDLV Standard Message Set and libcluon.
 set(OPENDLV_STANDARD_MESSAGE_SET messages.odvd)
-set(CARLOS_STANDARD_MESSAGE_SET envelopes.odvd)
 set(CLUON_COMPLETE cluon-complete-v0.0.121.hpp)
 
 ################################################################################
@@ -73,16 +72,6 @@ include_directories(SYSTEM ${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 ################################################################################
-# Generate envelopes.hpp from ${CARLOS_STANDARD_MESSAGE_SET} file.
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/envelopes.hpp
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp --out=${CMAKE_BINARY_DIR}/envelopes.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${CARLOS_STANDARD_MESSAGE_SET}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${CARLOS_STANDARD_MESSAGE_SET} ${CMAKE_BINARY_DIR}/cluon-msc)
-# Add current build directory as include directory as it contains generated files.
-include_directories(SYSTEM ${CMAKE_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-################################################################################
 # Gather all object code first to avoid double compilation.
 set(LIBRARIES Threads::Threads)
 
@@ -106,3 +95,4 @@ target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 ################################################################################
 # Install executable.
 install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT ${PROJECT_NAME})
+

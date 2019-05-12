@@ -136,20 +136,15 @@ int32_t main(int32_t argc, char **argv)
         //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
-        cout<<"CHECKPOINT 1"<<flush<<endl;
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
-        cout<<"CHECKPOINT 2"<<flush<<endl;
         vector<Rect> cars;
         car_cascade.detectMultiScale(obj_frame, cars);
-        cout<<"CHECKPOINT 3"<<flush<<endl;
 if(cars.size()!=0){
         for (size_t i = 0; i < cars.size(); i++) {
             Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
             ellipse(resizedImg, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
         }
       }
-      cout<<"CHECKPOINT 4"<<flush<<endl;
-        //GaussianBlur(img_hsv,blur,Size(1,1),0,0,borderType);
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());

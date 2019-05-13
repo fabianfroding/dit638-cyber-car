@@ -34,6 +34,7 @@ int32_t main(int32_t argc, char **argv)
 
   //**VARIABLES**//
   int32_t retCode{1};
+  bool stopSignPresent=false, stopSignDetected=false;
   String car_cascade_name;
   CascadeClassifier car_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
@@ -95,8 +96,7 @@ int32_t main(int32_t argc, char **argv)
       carlos::color::lead_car car_tracker;
       carlos::color::intersection intersection_tracker;
       carlos::color::status status;
-
-
+      carlos::object::sign signStatus;
       // carlos::vision::sign sign_tracker;
 
       bool SEMAPHORE_KEY = true;
@@ -139,17 +139,30 @@ int32_t main(int32_t argc, char **argv)
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
         vector<Rect> cars;
         car_cascade.detectMultiScale(obj_frame, cars);
-if(cars.size()!=0){
-        for (size_t i = 0; i < cars.size(); i++) {
-            Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
-            ellipse(resizedImg, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
+
+        if(cars.size()!=0){
+          for (size_t i = 0; i < cars.size(); i++) {
+              Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
+              ellipse(resizedImg, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
+          }
         }
-      }
+        if(stopSignPresent==true && cars.size()==0) {
+          stopSignPresent=false;
+          stopSignDetected=true;
+        }
+        else if(cars.size()>0) {
+          stopSignPresent=true;
+          stopSignDetected=true;
+        }
+        signStatus.detected(stopSignPresent);
+        signStatus.reached(stopSignDetected);
+        carlos_session.send(signStatus);
+        
+        cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());
         car_rectangle.resize(car_contours.size());
-
         stop_polygons.resize(stop_contours.size());
         stop_rectangle.resize(stop_contours.size());
 
@@ -204,7 +217,7 @@ if(cars.size()!=0){
         if (VERBOSE)
         {
           imshow(sharedMemory->name().c_str(), resizedImg);
-          cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
+        //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
           waitKey(1);
         }
       }

@@ -157,7 +157,7 @@ int32_t main(int32_t argc, char **argv)
         signStatus.detected(stopSignPresent);
         signStatus.reached(stopSignDetected);
         carlos_session.send(signStatus);
-        
+
         cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);

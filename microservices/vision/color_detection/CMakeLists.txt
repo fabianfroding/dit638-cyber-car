@@ -15,7 +15,7 @@
 
 cmake_minimum_required(VERSION 3.2)
 
-project(color)
+project(detection)
 
 ################################################################################
 # Defining the relevant versions of OpenDLV Standard Message Set and libcluon.

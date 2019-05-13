@@ -27,14 +27,22 @@ void printRectangleLocation(vector<Point> contour, Mat image, String object);
 vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_high);
 
 int32_t main(int32_t argc, char **argv)
-{ //**VARIABLES**//
+{
+  CommandLineParser parser(argc, argv,
+                           "{help h||}"
+                           "{car_cascade|./cascade.xml|Path to car cascade.}"
+                           "{camera|0|Camera device number.}");
+
+  //**VARIABLES**//
   int32_t retCode{1};
-  //int numberOfStops=0, numberOfCars=0;
+  bool stopSignPresent = false, stopSignDetected = false;
+  String car_cascade_name;
+  CascadeClassifier car_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
   vector<Rect> car_rectangle, stop_rectangle;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
   Rect temp, empty;
-  Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness;
+  Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2, resizedImg2;
   Mat stop_frame_threshold, stop_detected_edges;
   Scalar edge = Scalar(255, 255, 255);
   Scalar redEdge = Scalar(0, 0, 255);
@@ -46,6 +54,13 @@ int32_t main(int32_t argc, char **argv)
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
   Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
+
+  car_cascade_name = parser.get<String>("car_cascade");
+  if (!car_cascade.load(car_cascade_name))
+  {
+    cout << "--(!)Error loading car cascade\n";
+    return -1;
+  };
 
   auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
   if ((0 == commandlineArguments.count("name")) ||
@@ -83,7 +98,11 @@ int32_t main(int32_t argc, char **argv)
       carlos::color::lead_car lead_car;
       carlos::color::intersection intersection_tracker;
       carlos::color::status status;
+<<<<<<< HEAD:microservices/vision/color_detection/src/color.cpp
 
+=======
+      carlos::object::sign signStatus;
+>>>>>>> color_detection:microservices/vision/color_detection/src/detection.cpp
       // carlos::vision::sign sign_tracker;
 
       bool SEMAPHORE = true;
@@ -114,17 +133,46 @@ int32_t main(int32_t argc, char **argv)
           // lock/unlock.
           Mat wrapped(HEIGHT - 60, WIDTH, CV_8UC4, sharedMemory->data());
           img = wrapped.clone();
+          img2 = wrapped.clone();
         }
         sharedMemory->unlock();
+
         resize(img, resizedImg, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
+        resize(img2, resizedImg2, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img2.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
         //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
-        //GaussianBlur(img_hsv,blur,Size(1,1),0,0,borderType);
+        cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
+        equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
+        vector<Rect> cars;
+        car_cascade.detectMultiScale(obj_frame, cars);
+
+        if (cars.size() != 0)
+        {
+          for (size_t i = 0; i < cars.size(); i++)
+          {
+            Point center(cars[i].x + cars[i].width / 2, cars[i].y + cars[i].height / 2);
+            ellipse(resizedImg, center, Size(cars[i].width / 2, cars[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+          }
+        }
+        if (stopSignPresent == true && cars.size() == 0)
+        {
+          stopSignPresent = false;
+          stopSignDetected = true;
+        }
+        else if (cars.size() > 0)
+        {
+          stopSignPresent = true;
+          stopSignDetected = true;
+        }
+        signStatus.detected(stopSignPresent);
+        signStatus.reached(stopSignDetected);
+        carlos_session.send(signStatus);
+
+        cout << "Stop sign present: " << stopSignPresent << "| detected: " << stopSignDetected << flush << endl;
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());
         car_rectangle.resize(car_contours.size());
-
         stop_polygons.resize(stop_contours.size());
         stop_rectangle.resize(stop_contours.size());
 
@@ -179,12 +227,13 @@ int32_t main(int32_t argc, char **argv)
         if (VERBOSE)
         {
           imshow(sharedMemory->name().c_str(), resizedImg);
-          cout << "RECIEVED -> SEMAPHORE [" << SEMAPHORE << "]" << std::endl;
+          //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
           waitKey(1);
         }
       }
     }
   }
+  return retCode;
 }
 
 float carlos_converter(float num)

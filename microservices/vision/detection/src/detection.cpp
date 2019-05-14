@@ -30,14 +30,14 @@ int32_t main(int32_t argc, char **argv)
 {
   CommandLineParser parser(argc, argv,
                            "{help h||}"
-                           "{car_cascade|./cascade.xml|Path to car cascade.}"
+                           "{stopSigns_cascade|./cascade.xml|Path to car cascade.}"
                            "{camera|0|Camera device number.}");
 
   //**VARIABLES**//
   int32_t retCode{1};
   bool stopSignPresent=false, stopSignDetected=false;
-  String car_cascade_name;
-  CascadeClassifier car_cascade;
+  String stopSigns_cascade_name;
+  CascadeClassifier stopSigns_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
   vector<Rect> car_rectangle, stop_rectangle;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
@@ -55,8 +55,8 @@ int32_t main(int32_t argc, char **argv)
   Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
 
-  car_cascade_name = parser.get<String>("car_cascade");
-  if (!car_cascade.load(car_cascade_name)) {
+  stopSigns_cascade_name = parser.get<String>("stopSigns_cascade");
+  if (!stopSigns_cascade.load(stopSigns_cascade_name)) {
       cout << "--(!)Error loading car cascade\n";
       return -1;
   };
@@ -138,28 +138,39 @@ int32_t main(int32_t argc, char **argv)
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
-        vector<Rect> cars;
-        car_cascade.detectMultiScale(obj_frame, cars);
+        vector<Rect> stopSigns;
+        stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
+		size_t nStopSigns = stopSigns.size();
 
-        if(cars.size()!=0){
-          for (size_t i = 0; i < cars.size(); i++) {
-              Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
-              ellipse(resizedImg, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
+        if(nStopSigns!=0){
+          for (size_t i = 0; i < nStopSigns; i++) {
+              Point center(stopSigns[i].x + stopSigns[i].width/2, stopSigns[i].y + stopSigns[i].height/2);
+              ellipse(resizedImg, center, Size(stopSigns[i].width/2, stopSigns[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
           }
         }
-        if(stopSignPresent==true && cars.size()==0) {
+        
+        if(stopSignPresent && nStopSigns==0) {
           stopSignPresent=false;
           stopSignDetected=true;
-        }
-        else if(cars.size()>0) {
+        } else if (0<=nStopSigns) {
           stopSignPresent=true;
           stopSignDetected=true;
         }
-        signStatus.detected(stopSignPresent);
-        signStatus.reached(stopSignDetected);
-        carlos_session.send(signStatus);
+        // If stop sign has been detected and is present, we tell delegator that stop sign is detected.
+        // If stop sign has been detected but is not present, we tell delegator that stop sign is reached.
+        // If stop sign has not been detected and is not present, we don't send anything to delegator.
+        if (stopSignDetected) {
+        	if (stopSignPresent) {
+        		signStatus.detected(true);
+        		signStatus.reached(false);
+        	} else {
+        		signStatus.detected(false);
+        		signStatus.reached(true);
+        	}
+        	carlos_session.send(signStatus);
+        }
 
-        cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
+        cout<<"Stop sign present: "<<stopSignPresent<<"| Stop sign detected: "<<stopSignDetected<<flush<<endl;
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());

@@ -33,6 +33,7 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--cmd]" << std::endl;
         std::cerr << argv[0] << "[--color]" << std::endl;
         std::cerr << argv[0] << "[--object]" << std::endl;
+        std::cerr << argv[0] << "[--stage]" << std::endl;
         //std::cerr << argv[0] << "[--freq" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--verbose --object" << std::endl;
@@ -44,21 +45,16 @@ int32_t main(int32_t argc, char **argv)
     const bool CMD{commandlineArguments.count("cmd") != 0};
     const bool COLOR{commandlineArguments.count("color") != 0};
     const bool OBJECT{commandlineArguments.count("object") != 0};
+    const bool STAGES{commandlineArguments.count("stage") != 0};
     //const float FREQ{(commandlineArguments.count("freq") != 0) ? static_cast<float>(std::stof(commandlineArguments["freq"])) : static_cast<float>(30)};
 
-    if (VERBOSE)
-    {
-        std::cout << "starting up " << argv[0] << "..." << std::endl;
-    }
+    std::cout << "starting up " << argv[0] << "..." << std::endl;
 
     cluon::OD4Session carlos_session{CARLOS_SESSION}; //needed to send messages to carlos session
 
     if (carlos_session.isRunning())
     {
-        if (VERBOSE)
-        {
-            std::cout << "[delegator] micro-service started..." << std::endl;
-        }
+        std::cout << "[delegator] micro-service started..." << std::endl;
 
         const bool LOCK = false;
         const bool UNLOCK = true;
@@ -85,14 +81,14 @@ int32_t main(int32_t argc, char **argv)
             if (collision_warning)
             {
                 services.acc.semaphore(LOCK);
-                services.color.semaphore(LOCK);
+                services.cmd.semaphore(LOCK);
                 carlos_session.send(services.acc);
                 carlos_session.send(services.object);
             }
             else
             {
                 services.acc.semaphore(UNLOCK);
-                services.color.semaphore(UNLOCK);
+                services.cmd.semaphore(UNLOCK);
                 carlos_session.send(services.acc);
                 carlos_session.send(services.object);
             }
@@ -131,7 +127,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         bool sign_detected = false, sign_reached = false; //object service
-        auto object_sign = [VERBOSE, OBJECT, &STAGE, /* &carlos_session, &LOCK, &UNLOCK, */ &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
+        auto object_sign = [VERBOSE, OBJECT, &STAGE, &STAGES, &carlos_session, &services, &LOCK, /*&UNLOCK, */ &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::object::sign>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -142,7 +138,18 @@ int32_t main(int32_t argc, char **argv)
             if (sign_detected)
             {
                 STAGE = 1;
-                if (VERBOSE)
+                services.acc.stage(STAGE);
+                services.cmd.stage(STAGE);
+                services.color.stage(STAGE);
+                services.object.stage(STAGE);
+
+                //send messages
+                carlos_session.send(services.acc);
+                carlos_session.send(services.cmd);
+                carlos_session.send(services.color);
+                carlos_session.send(services.object);
+
+                if (VERBOSE || STAGES)
                 {
                     std::cout << " STAGE set to [" << STAGE << "]" << std::endl;
                 }
@@ -150,7 +157,20 @@ int32_t main(int32_t argc, char **argv)
             if (sign_reached)
             {
                 STAGE = 2;
-                if (VERBOSE)
+
+                services.acc.stage(STAGE);
+                services.acc.semaphore(LOCK);
+                services.cmd.stage(STAGE);
+                services.color.stage(STAGE);
+                services.object.stage(STAGE);
+
+                //send messages
+                carlos_session.send(services.acc);
+                carlos_session.send(services.cmd);
+                carlos_session.send(services.color);
+                carlos_session.send(services.object);
+
+                if (VERBOSE || STAGES)
                 {
                     std::cout << " STAGE set to [" << STAGE << "]" << std::endl;
                 }
@@ -177,7 +197,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         bool north = false, east = false, west = false; //color service
-        auto color_intersection = [VERBOSE, COLOR, &STAGE, /* &carlos_session, &LOCK, &UNLOCK, */ &north, &east, &west](cluon::data::Envelope &&envelope) {
+        auto color_intersection = [VERBOSE, COLOR, &STAGE, &STAGES, &carlos_session, &services, /*&LOCK, &UNLOCK, */ &north, &east, &west](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::intersection>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -189,7 +209,17 @@ int32_t main(int32_t argc, char **argv)
             {
                 /*if north, east and west flags are false*/
                 STAGE = 3;
-                if (VERBOSE)
+                services.acc.stage(STAGE);
+                services.cmd.stage(STAGE);
+                services.color.stage(STAGE);
+                services.object.stage(STAGE);
+
+                //send messages
+                carlos_session.send(services.acc);
+                carlos_session.send(services.cmd);
+                carlos_session.send(services.color);
+                carlos_session.send(services.object);
+                if (VERBOSE || STAGES)
                 {
                     std::cout << " STAGE set to [" << STAGE << "]" << std::endl;
                 }
@@ -242,9 +272,6 @@ int32_t main(int32_t argc, char **argv)
             carlos_session.send(services.cmd);
             carlos_session.send(services.color);
             carlos_session.send(services.object);
-            //delay
-            std::chrono::milliseconds timer(1000); // or whatever
-            std::this_thread::sleep_for(timer);
 
             if (VERBOSE)
             {

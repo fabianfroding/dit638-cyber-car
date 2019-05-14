@@ -91,7 +91,7 @@ int32_t main(int32_t argc, char **argv)
       // cout<<"hello!"<<flush;
       // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
       cluon::OD4Session carlos_session{CARLOS_SESSION};
-      cluon::OD4Session car_session{CID_SESSION};
+      cluon::OD4Session kiwi_session{CID_SESSION};
 
       opendlv::proxy::GroundSteeringRequest wheel;
       carlos::color::lead_car lead_car;
@@ -113,7 +113,7 @@ int32_t main(int32_t argc, char **argv)
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
 
       // Endless loop; end the program by pressing Ctrl-C.
-      while (carlos_session.isRunning() || car_session.isRunning())
+      while (carlos_session.isRunning() || kiwi_session.isRunning())
       {
         // Wait for a notification of a new frame.
         sharedMemory->wait();
@@ -205,7 +205,7 @@ int32_t main(int32_t argc, char **argv)
             wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
             if (SEMAPHORE)
             {
-              car_session.send(wheel); //send to car
+              kiwi_session.send(wheel); //send to car
             }
             lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
             lead_car.area(car_rectangle[k].area());                          //area                            //number of cars queued

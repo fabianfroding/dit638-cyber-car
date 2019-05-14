@@ -4,6 +4,7 @@
 
 #include "cluon-complete.hpp"
 #include "opendlv-standard-message-set.hpp"
+#include "envelopes.hpp"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -93,23 +94,23 @@ int32_t main(int32_t argc, char **argv)
       cluon::OD4Session car_session{CID_SESSION};
 
       opendlv::proxy::GroundSteeringRequest wheel;
-      carlos::color::lead_car car_tracker;
+      carlos::color::lead_car lead_car;
       carlos::color::intersection intersection_tracker;
       carlos::color::status status;
       carlos::object::sign signStatus;
       // carlos::vision::sign sign_tracker;
 
-      bool SEMAPHORE_KEY = true;
+      bool SEMAPHORE = true;
 
       /*prepared callback*/
-      auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
+      auto semaphore = [VERBOSE, &SEMAPHORE](cluon::data::Envelope &&envelope) {
         /** unpack message recieved*/
         auto msg = cluon::extractMessage<carlos::color::status>(std::move(envelope));
         /*store data*/
-        SEMAPHORE_KEY = msg.semaphore();
+        SEMAPHORE = msg.semaphore();
       };
       /*registered callback*/
-      //carlos_session.dataTrigger(carlos::semaphore::vision::color::ID(), semaphore);
+      carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
 
       // Endless loop; end the program by pressing Ctrl-C.
       while (carlos_session.isRunning() || car_session.isRunning())
@@ -202,14 +203,14 @@ int32_t main(int32_t argc, char **argv)
 
             //create the envelope containing this data
             wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
-            if (SEMAPHORE_KEY)
+            if (SEMAPHORE)
             {
               car_session.send(wheel); //send to car
             }
-            car_tracker.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
-            car_tracker.area(car_rectangle[k].area());                          //area                            //number of cars queued
+            lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
+            lead_car.area(car_rectangle[k].area());                          //area                            //number of cars queued
 
-            carlos_session.send(car_tracker); //send the message to the delegator
+            carlos_session.send(lead_car); //send the message to the delegator
           }
 
         //message sending stopped

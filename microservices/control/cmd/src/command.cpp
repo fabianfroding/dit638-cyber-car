@@ -41,6 +41,9 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cout << "starting up " << argv[0] << "..." << std::endl;
         std::cout << "turn: [" << TURN << "]" << std::endl;
+        std::cout << "speed: [" << SP << "]" << std::endl;
+        std::cout << "delay: [" << DELAY << "]" << std::endl;
+        std::cout << "turn: [" << TURN << "]" << std::endl;
     }
 
     cluon::OD4Session carlos_session{CARLOS_SESSION};
@@ -57,24 +60,12 @@ int32_t main(int32_t argc, char **argv)
         int16_t STAGE = 0;
 
         /*callbacks*/
-        auto get_status = [VERBOSE, &SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
+        auto get_status = [&SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::cmd::status>(std::move(envelope));
             /*store data*/
             SEMAPHORE = msg.semaphore();
             STAGE = msg.stage();
-
-            if (VERBOSE)
-            {
-                if (SEMAPHORE)
-                {
-                    std::cout << "RECIEVED -> SEMAPHORE [UNLOCKED]" << std::endl;
-                }
-                else
-                {
-                    std::cout << "RECIEVED -> SEMAPHORE [LOCKED]" << std::endl;
-                }
-            }
         };
 
         carlos_session.dataTrigger(carlos::cmd::status::ID(), get_status);
@@ -89,77 +80,103 @@ int32_t main(int32_t argc, char **argv)
 
         while (kiwi_session.isRunning())
         {
-            if (DEBUG)
+            if (SEMAPHORE)
             {
-                std::cout << "turn angle:" << std::endl;
-                scanf("%f", &turn);
-                std::cout << "speed:" << std::endl;
-                scanf("%f", &speed);
-                std::cout << "delay:" << std::endl;
-                scanf("%hd", &delay_time);
-                std::cout << "message:" << std::endl;
-                scanf("%hd", &message);
-
-                if (turn == 0 && speed == 0 && delay_time == 0)
+                if (DEBUG)
                 {
-                    std::cout << "DEBUG session ended." << std::endl;
-                    break;
+                    std::cout << "turn angle:" << std::endl;
+                    scanf("%f", &turn);
+                    std::cout << "speed:" << std::endl;
+                    scanf("%f", &speed);
+                    std::cout << "delay:" << std::endl;
+                    scanf("%hd", &delay_time);
+                    std::cout << "message:" << std::endl;
+                    scanf("%hd", &message);
+
+                    if ((-0.6 <= turn && turn <= 0.6) && speed >= 0 /*  && delay_time >= 0 */)
+                    {
+                        //turn wheel
+                        wheel.groundSteering(turn);
+                        kiwi_session.send(wheel);
+
+                        //speed
+                        pedal.position(speed);
+                        kiwi_session.send(pedal);
+
+                        //delay
+                        std::chrono::milliseconds timer(delay_time); // or whatever
+                        std::this_thread::sleep_for(timer);
+
+                        //stop vehicle
+                        pedal.position(0);
+                        kiwi_session.send(pedal);
+
+                        //straighten wheel
+                        wheel.groundSteering(0);
+                        kiwi_session.send(wheel);
+
+                        command.turn(message);
+                        carlos_session.send(command);
+                    }
+                    else
+                    {
+                        std::cout << "ERROR" << std::endl;
+                        if (!(-0.6 <= turn && turn <= 0.6))
+                        {
+                            std::cout << "the turn angle should be between -0.6 and 0.6" << std::endl;
+                        }
+                        if (!(speed >= 0))
+                        {
+                            std::cout << "the speed should be greater than or equal to 0" << std::endl;
+                        }
+                        /* if (!(delay_time >= 0))
+                    {
+                        std::cout << "the delay time should be greater than or equal to 0" << std::endl;
+                    } */
+                    }
+                    if (turn == 0 && speed == 0 && delay_time == 0)
+                    {
+                        std::cout << "DEBUG session ended." << std::endl;
+                        break;
+                    }
                 }
-                //turn wheel
-                wheel.groundSteering(turn);
-                kiwi_session.send(wheel);
+                else
+                {
+                    if (STAGE == 3)
+                    {
+                        const int16_t left = 1, right = 2, neutral = 0;
+                        int16_t userInp = -1;
+                        /*leaving intersection*/
+                        std::cout << "press: " << std::endl;
+                        std::cout << "[" << left << "] for left turn" << std::endl;
+                        std::cout << "[" << right << "] for right turn" << std::endl;
+                        std::cout << "[" << neutral << "] for neutral" << std::endl;
+                        //take in input
+                        scanf("%hd", &userInp);
 
-                //speed
-                pedal.position(speed);
-                kiwi_session.send(pedal);
-
-                //delay
-                std::chrono::milliseconds timer(delay_time); // or whatever
-                std::this_thread::sleep_for(timer);
-
-                //stop vehicle
-                pedal.position(0);
-                kiwi_session.send(pedal);
-
-                //straighten wheel
-                wheel.groundSteering(0);
-                kiwi_session.send(wheel);
-
-                command.turn(message);
-                carlos_session.send(command);
+                        switch (userInp)
+                        {
+                        case left:
+                            std::cout << "Carlos is turning [Left]" << std::endl;
+                            break;
+                        case right:
+                            std::cout << "Carlos is turning [Right]" << std::endl;
+                            break;
+                        case neutral:
+                            std::cout << "Carlos is [Straight]" << std::endl;
+                            break;
+                        }
+                        //send data
+                        if (SEMAPHORE)
+                        {
+                            kiwi_session.send(wheel);
+                        }
+                    }
+                }
             }
             else
             {
-                if (STAGE == 3)
-                {
-                    const int16_t left = 1, right = 2, neutral = 0;
-                    int16_t userInp = -1;
-                    /*leaving intersection*/
-                    std::cout << "press: " << std::endl;
-                    std::cout << "[" << left << "] for left turn" << std::endl;
-                    std::cout << "[" << right << "] for right turn" << std::endl;
-                    std::cout << "[" << neutral << "] for neutral" << std::endl;
-                    //take in input
-                    scanf("%hd", &userInp);
-
-                    switch (userInp)
-                    {
-                    case left:
-                        std::cout << "Carlos is turning [Left]" << std::endl;
-                        break;
-                    case right:
-                        std::cout << "Carlos is turning [Right]" << std::endl;
-                        break;
-                    case neutral:
-                        std::cout << "Carlos is [Straight]" << std::endl;
-                        break;
-                    }
-                    //send data
-                    if (SEMAPHORE)
-                    {
-                        kiwi_session.send(wheel);
-                    }
-                }
+                std::cout << "RECIEVED -> SEMAPHORE [LOCKED]" << std::endl;
             }
         }
     }

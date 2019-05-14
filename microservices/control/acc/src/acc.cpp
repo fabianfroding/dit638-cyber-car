@@ -12,8 +12,6 @@
 #include "messages.hpp"
 #include "envelopes.hpp"
 
-float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE);
-
 /*main*/
 int32_t main(int32_t argc, char **argv)
 {
@@ -35,13 +33,10 @@ int32_t main(int32_t argc, char **argv)
     const uint16_t CID{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
     const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.30)};
-    const float MAX_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
+    const float USER_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
 
-    if (VERBOSE)
-    {
-        std::cout << "starting up " << argv[0] << "..." << std::endl;
-        std::cout << "speed: [" << MAX_SPEED << "], front saftey distance: [" << SAFE_DISTANCE << " meters]" << std::endl;
-    }
+    std::cout << "starting up " << argv[0] << "..." << std::endl;
+    std::cout << "speed: [" << USER_SPEED << "], front saftey distance: [" << SAFE_DISTANCE << " meters]" << std::endl;
 
     cluon::OD4Session carlos_session{CARLOS_SESSION}; //needed to send messages to carlos session
     cluon::OD4Session kiwi_session{CID};              //needed to recieve data from sensors
@@ -55,6 +50,7 @@ int32_t main(int32_t argc, char **argv)
 
         bool SEMAPHORE = true;
         int16_t STAGE = 0;
+        float SPEED = 0, PREV_SPEED = SPEED;
 
         /*callbacks*/
         auto get_status = [VERBOSE, &SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
@@ -77,70 +73,53 @@ int32_t main(int32_t argc, char **argv)
             }
         };
 
-        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, MAX_SPEED, &kiwi_session, &carlos_session, &SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
+        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, &kiwi_session, &carlos_session, &SEMAPHORE, &STAGE, &SPEED, &PREV_SPEED](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
-            const uint16_t senderStamp = envelope.senderStamp(), front_sensor = 0, left_sensor = 1;
+            const uint16_t senderStamp = envelope.senderStamp(), front_sensor = 0 /* left_sensor = 1 */;
             /*store sensor data*/
             float sensor = msg.distance();
-            /*other variables*/
-            float speed = autoPedal(sensor, SAFE_DISTANCE, MAX_SPEED, VERBOSE);
-            /*messages to carlos session*/
-            carlos::acc::collision collision_status;
-            carlos::acc::trigger trigger;
-            /*messages to kiwi session*/
-            opendlv::proxy::PedalPositionRequest pedal;
 
-            switch (senderStamp)
+            carlos::acc::collision collision_status; //carlos
+            //carlos::acc::trigger trigger;               //carlos
+            opendlv::proxy::PedalPositionRequest pedal; //kiwi
+
+            if (STAGE != 2 && senderStamp == front_sensor)
             {
-            case front_sensor:
-                /* front sensor */
-                switch (STAGE)
+                if (sensor < SAFE_DISTANCE)
                 {
-                case 1:
-                    /* intersection detected */
-                    pedal.position(speed);
-
-                    collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
-                    carlos_session.send(collision_status);
-                    break;
-
-                case 2:
-                    /* at intersection */
-                    trigger.front_sensor(sensor);
-                    carlos_session.send(trigger);
-                    pedal.position(0); //car should never move in stage 2
-                    break;
-
-                case 3:
-                    collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
-                    carlos_session.send(collision_status);
-                    break;
-
-                default:
-                    /* no stages have been engaged */
-                    pedal.position(speed);
-                    collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
-                    carlos_session.send(collision_status);
-                    break;
+                    SPEED = 0;
+                    pedal.position(SPEED);
+                    if (VERBOSE)
+                    {
+                        std::cout << "Sent stop instructions. Object Detected at [" << sensor << "]" << std::endl;
+                    }
                 }
-                break;
-
-            case left_sensor:
-                if (STAGE == 2)
-                { /* at intersection */
-                    trigger.left_sensor(sensor);
-                    carlos_session.send(trigger);
-                    pedal.position(0); //car should never move in stage 2
+                else
+                {
+                    SPEED = USER_SPEED;
+                    pedal.position(SPEED);
+                    if (VERBOSE)
+                    {
+                        std::cout << "Sent move instructions at speed [" << SPEED << "]" << std::endl;
+                    }
                 }
-                break;
+                collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
+                carlos_session.send(collision_status);
+                if (SEMAPHORE && (SPEED != PREV_SPEED))
+                {
+                    kiwi_session.send(pedal);
+                }
+                PREV_SPEED = SPEED;
             }
-
-            if (SEMAPHORE)
-            {
-                kiwi_session.send(pedal);
-            }
+            // else
+            // {
+            //     nothing for now
+            //     trigger.left_sensor(sensor);
+            //     carlos_session.send(trigger);
+            //     pedal.position(0);
+            // }
         };
 
         /*registers callbacks*/
@@ -157,41 +136,4 @@ int32_t main(int32_t argc, char **argv)
         std::cout << "Carlos Out. (OD4Session timed out.)" << std::endl;
     }
     return 0;
-}
-
-/*functions*/
-
-float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE)
-{
-    const float neutral = 0.0;
-    float result = neutral;
-
-    if (front_sensor <= SAFE_DISTANCE)
-    {
-        /**
-        * front sensor detects something
-        * stop car
-        * */
-        result = neutral;
-
-        if (VERBOSE)
-        {
-            std::cout << "Sent stop instructions. Object Detected at [" << front_sensor << "]" << std::endl;
-        }
-    }
-
-    if (front_sensor > SAFE_DISTANCE)
-    {
-        /**
-        * front sensor is clear
-        * move car forward
-        * */
-        result = MAX_SPEED;
-
-        if (VERBOSE)
-        {
-            std::cout << "Sent move instructions at speed [" << result << "]" << std::endl;
-        }
-    }
-    return result;
 }

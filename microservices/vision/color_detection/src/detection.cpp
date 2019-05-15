@@ -292,7 +292,3 @@ vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_h
   //cout<<"there are "<<hierarchy.size()<<" objects detected"<<endl<<flush;
   return contours;
 }
-
-bool setNorthCar(bool car){
-
-}

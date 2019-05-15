@@ -46,8 +46,7 @@ int32_t main(int32_t argc, char **argv)
   Mat stop_frame_threshold, stop_detected_edges;
   Scalar edge = Scalar(255, 255, 255);
   Scalar redEdge = Scalar(0, 0, 255);
-  //stop sign colors
-  double stop_low_H = 151, stop_high_H = 172, stop_low_S = 61, stop_high_S = 255, stop_low_V = 52, stop_high_V = 255; //,sensitivity=0;
+
   //car sticker colors
   double car_low_H = 40, car_high_H = 94, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
@@ -174,9 +173,9 @@ int32_t main(int32_t argc, char **argv)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               printRectangleLocation(car_contours[k], resizedImg, "car"); //coordinates and position of the center of each rectangle
-              if(getPercentageOfWidth(car_contours[k],img) < (img.size()/100*30)) westCar=true;
-              if(getPercentageOfWidth(car_contours[k],img) > (img.size()/100*30) && getPercentageOfWidth(car_contours[k],img) < (img.size()/100*65)) northCar=true;
-              if(getPercentageOfWidth(car_contours[k],img) > (img.size()/100*65)) eastCar=true;
+              if(getPercentageOfWidth(car_contours[k],img) < img.size().width/100*30 westCar=true;
+              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*30 && getPercentageOfWidth(car_contours[k],img) < img.size().width/100*65 northCar=true;
+              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*65 eastCar=true;
               cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             }
             groupRectangles(car_rectangle, 1, 0.7); //group overlapping rectangles
@@ -259,9 +258,8 @@ float getPercentageOfWidth(vector<Point> contour, Mat image)
 }
 
 //print the location of a detected color according to its name
-void printRectangleLocation(vector<Point> contour, Mat image, bool westCar, bool northCar, bool eastCar)
+void printRectangleLocation(vector<Point> contour, Mat image)
 {
-  double area = contourArea(contour);
   float x, y, percentage = 0;
   Point centerOfObject;
   x = getCenterOfContour(contour).x;

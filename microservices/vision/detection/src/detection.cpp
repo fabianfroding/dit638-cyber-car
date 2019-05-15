@@ -35,20 +35,14 @@ int32_t main(int32_t argc, char **argv)
 
   //**VARIABLES**//
   int32_t retCode{1};
-<<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
   bool stopSignPresent = false, stopSignDetected = false;
-  String stopSigns_cascade_name;
-  CascadeClassifier stopSigns_cascade;
-=======
-  bool stopSignPresent=false, stopSignDetected=false;
   String car_cascade_name;
   CascadeClassifier car_cascade;
->>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
   vector<Rect> car_rectangle, stop_rectangle;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
   Rect temp, empty;
-  Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2,resizedImg2;
+  Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2, resizedImg2;
   Mat stop_frame_threshold, stop_detected_edges;
   Scalar edge = Scalar(255, 255, 255);
   Scalar redEdge = Scalar(0, 0, 255);
@@ -61,18 +55,11 @@ int32_t main(int32_t argc, char **argv)
   Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
 
-<<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
-  stopSigns_cascade_name = parser.get<String>("stopSigns_cascade");
-  if (!stopSigns_cascade.load(stopSigns_cascade_name))
+  car_cascade_name = parser.get<String>("car_cascade");
+  if (!car_cascade.load(car_cascade_name))
   {
     cout << "--(!)Error loading car cascade\n";
     return -1;
-=======
-  car_cascade_name = parser.get<String>("car_cascade");
-  if (!car_cascade.load(car_cascade_name)) {
-      cout << "--(!)Error loading car cascade\n";
-      return -1;
->>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
   };
 
   auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
@@ -154,7 +141,7 @@ int32_t main(int32_t argc, char **argv)
           // lock/unlock.
           Mat wrapped(HEIGHT - 60, WIDTH, CV_8UC4, sharedMemory->data());
           img = wrapped.clone();
-          img2= wrapped.clone();
+          img2 = wrapped.clone();
         }
         sharedMemory->unlock();
 
@@ -176,16 +163,19 @@ int32_t main(int32_t argc, char **argv)
             Point center(cars[i].x + cars[i].width / 2, cars[i].y + cars[i].height / 2);
             ellipse(resizedImg, center, Size(cars[i].width / 2, cars[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
 =======
-        if(cars.size()!=0){
-          for (size_t i = 0; i < cars.size(); i++) {
-              Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
-              ellipse(resizedImg, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
+        if (cars.size() != 0)
+        {
+          for (size_t i = 0; i < cars.size(); i++)
+          {
+            Point center(cars[i].x + cars[i].width / 2, cars[i].y + cars[i].height / 2);
+            ellipse(resizedImg, center, Size(cars[i].width / 2, cars[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
 >>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
           }
         }
-        if(stopSignPresent==true && cars.size()==0) {
-          stopSignPresent=false;
-          stopSignDetected=true;
+        if (stopSignPresent == true && cars.size() == 0)
+        {
+          stopSignPresent = false;
+          stopSignDetected = true;
         }
 <<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
         else if (cars.size() > 0)
@@ -230,9 +220,10 @@ int32_t main(int32_t argc, char **argv)
           }
           carlos_session.send(signStatus);
 =======
-        else if(cars.size()>0) {
-          stopSignPresent=true;
-          stopSignDetected=true;
+        else if (cars.size() > 0)
+        {
+          stopSignPresent = true;
+          stopSignDetected = true;
 >>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
         }
 
@@ -243,7 +234,7 @@ int32_t main(int32_t argc, char **argv)
         cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
 >>>>>>> detection-msg:microservices/vision/detection/src/detection.cpp
 =======
-        cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
+        cout << "Stop sign present: " << stopSignPresent << "| detected: " << stopSignDetected << flush << endl;
 >>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
@@ -310,7 +301,7 @@ int32_t main(int32_t argc, char **argv)
           //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
 >>>>>>> detection-msg:microservices/vision/detection/src/detection.cpp
 =======
-        //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
+          //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
 >>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
           waitKey(1);
         }

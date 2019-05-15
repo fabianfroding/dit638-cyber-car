@@ -50,7 +50,6 @@ int32_t main(int32_t argc, char **argv)
   //car sticker colors
   double car_low_H = 40, car_high_H = 94, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
-  Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
 
   car_cascade_name = parser.get<String>("car_cascade");
@@ -173,9 +172,9 @@ int32_t main(int32_t argc, char **argv)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               printRectangleLocation(car_contours[k], resizedImg, "car"); //coordinates and position of the center of each rectangle
-              if(getPercentageOfWidth(car_contours[k],img) < img.size().width/100*30 westCar=true;
-              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*30 && getPercentageOfWidth(car_contours[k],img) < img.size().width/100*65 northCar=true;
-              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*65 eastCar=true;
+              if(getPercentageOfWidth(car_contours[k],img) < img.size().width/100*30) westCar=true;
+              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*30 && getPercentageOfWidth(car_contours[k],img) < img.size().width/100*65) northCar=true;
+              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*65) eastCar=true;
               cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             }
             groupRectangles(car_rectangle, 1, 0.7); //group overlapping rectangles
@@ -195,7 +194,7 @@ int32_t main(int32_t argc, char **argv)
             intersection_tracker.west(westCar);
             intersection_tracker.north(northCar);
             intersection_tracker.east(eastCar);
-            carlos_session(intersection_tracker);
+            carlos_session.send(intersection_tracker);
           }
 
         //message sending stopped

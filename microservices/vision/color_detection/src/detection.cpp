@@ -167,13 +167,14 @@ int32_t main(int32_t argc, char **argv)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
-              if(getPercentageOfWidth(car_contours[k],img) < img.size().width/100*30) westCar=true;
+              if(getPercentageOfWidth(car_contours[k],resizedImg) < resizedImg.size().width/100*30) westCar=true;
               else westCar=false;
-              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*30 && getPercentageOfWidth(car_contours[k],img) < img.size().width/100*65) northCar=true;
+              if(getPercentageOfWidth(car_contours[k],resizedImg) >= resizedImg.size().width/100*30 && getPercentageOfWidth(car_contours[k],resizedImg) <= resizedImg.size().width/100*65) northCar=true;
               else northCar=false;
-              if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*65) eastCar=true;
+              if(getPercentageOfWidth(car_contours[k],resizedImg) > resizedImg.size().width/100*65) eastCar=true;
               else eastCar=false;
             }
+            else {westCar=false; eastCar=false; northCar=false;}
             groupRectangles(car_rectangle, 1, 0.7); //group overlapping rectangles
             cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             drawRectangle(car_rectangle[k], resizedImg, edge);

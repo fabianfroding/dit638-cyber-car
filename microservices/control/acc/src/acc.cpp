@@ -25,9 +25,10 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
         std::cerr << argv[0] << "[--sd=<front/back safety space>]" << std::endl;
         std::cerr << argv[0] << "[--sp=<speed, min is 0.13 and max is 0.8>]" << std::endl;
+        std::cerr << argv[0] << "[--trig=<trigger distance>]" << std::endl;
         std::cerr << argv[0] << "[--verbose]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
-        std::cerr << "example:  " << argv[0] << " --cid=112 --carlos=113 --sd=0.2 --sp=013 --verbose" << std::endl;
+        std::cerr << "example:  " << argv[0] << " --cid=112 --carlos=113 --verbose --sd=0.2 --sp=013" << std::endl;
         return -1;
     }
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
@@ -35,7 +36,7 @@ int32_t main(int32_t argc, char **argv)
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
     const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.30)};
     const float USER_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
-    const float INTERSECTION{(commandlineArguments.count("intersection") != 0) ? static_cast<float>(std::stof(commandlineArguments["intersection"])) : static_cast<float>(0.15)};
+    const float INTERSECTION{(commandlineArguments.count("trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["trig"])) : static_cast<float>(0.15)};
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
     std::cout << "speed: [" << USER_SPEED << "], front saftey distance: [" << SAFE_DISTANCE << " meters]" << std::endl;
@@ -82,7 +83,8 @@ int32_t main(int32_t argc, char **argv)
             }
         };
 
-        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, &kiwi_session, &carlos_session, &SEMAPHORE, &SPEED, &PREV_SPEED, &STAGE](cluon::data::Envelope &&envelope) {
+        opendlv::proxy::PedalPositionRequest pedal; //kiwi
+        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -90,9 +92,8 @@ int32_t main(int32_t argc, char **argv)
             /*store sensor data*/
             float sensor = msg.distance();
 
-            carlos::acc::collision collision_status;    //carlos
-            carlos::acc::trigger trigger;               //carlos
-            opendlv::proxy::PedalPositionRequest pedal; //kiwi
+            carlos::acc::collision collision_status; //carlos
+            carlos::acc::trigger trigger;            //carlos
 
             if (senderStamp == front_sensor)
             {
@@ -102,10 +103,6 @@ int32_t main(int32_t argc, char **argv)
                     {
                         SPEED = 0;
                         pedal.position(SPEED);
-                        if (SEMAPHORE && (SPEED != PREV_SPEED))
-                        {
-                            kiwi_session.send(pedal);
-                        }
 
                         if (VERBOSE)
                         {
@@ -116,10 +113,6 @@ int32_t main(int32_t argc, char **argv)
                     {
                         SPEED = USER_SPEED;
                         pedal.position(SPEED);
-                        if (SEMAPHORE && (SPEED != PREV_SPEED))
-                        {
-                            kiwi_session.send(pedal);
-                        }
 
                         if (VERBOSE)
                         {
@@ -144,6 +137,7 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(collision_status);
                 PREV_SPEED = SPEED;
             }
+
             if ((senderStamp == left_sensor) && STAGE == 2)
             {
                 //intersection
@@ -166,6 +160,10 @@ int32_t main(int32_t argc, char **argv)
         while (kiwi_session.isRunning())
         {
             /* just run this microservice until ist crashes */
+            if (SEMAPHORE && (SPEED != PREV_SPEED))
+            {
+                kiwi_session.send(pedal);
+            }
         }
     }
     else

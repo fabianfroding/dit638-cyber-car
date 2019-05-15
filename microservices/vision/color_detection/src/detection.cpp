@@ -43,7 +43,6 @@ int32_t main(int32_t argc, char **argv)
   vector<Vec4i> car_hierarchy, stop_hierarchy;
   Rect temp, empty;
   Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2,resizedImg2;
-  Mat stop_frame_threshold, stop_detected_edges;
   Scalar edge = Scalar(255, 255, 255);
   Scalar redEdge = Scalar(0, 0, 255);
 
@@ -157,11 +156,8 @@ int32_t main(int32_t argc, char **argv)
 
         cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
         car_contours = getContours(img_hsv, car_low, car_high);
-        stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());
         car_rectangle.resize(car_contours.size());
-        stop_polygons.resize(stop_contours.size());
-        stop_rectangle.resize(stop_contours.size());
 
         //**PROCESS CAR GREEN DETECTION**
         if (car_contours.size() > 0)

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <string>
 
 #include "cluon-complete.hpp"
 #include "envelopes.hpp"
@@ -45,8 +46,6 @@ int32_t main(int32_t argc, char **argv)
     const bool CMD{commandlineArguments.count("cmd") != 0};
     const bool COLOR{commandlineArguments.count("color") != 0};
     const bool OBJECT{commandlineArguments.count("object") != 0};
-    const bool STAGES{commandlineArguments.count("stage") != 0};
-    //const float FREQ{(commandlineArguments.count("freq") != 0) ? static_cast<float>(std::stof(commandlineArguments["freq"])) : static_cast<float>(30)};
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
 
@@ -72,7 +71,7 @@ int32_t main(int32_t argc, char **argv)
         services.object.stage(STAGE);
 
         bool collision_warning = true; //acc service (collision)
-        auto acc_collision = [VERBOSE, ACC, &carlos_session, &LOCK, &UNLOCK, &services, &collision_warning](cluon::data::Envelope &&envelope) {
+        auto acc_collision = [&carlos_session, &LOCK, &UNLOCK, &services, &collision_warning](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::collision>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -92,42 +91,27 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(services.acc);
                 carlos_session.send(services.object);
             }
-
-            if (VERBOSE || ACC)
-            {
-                std::cout << "INBOX -> ACC collision warning:[" << collision_warning << "]" << std::endl;
-            }
         };
 
         bool front_trigger = false, left_trigger = false; //acc service (triggers)
-        auto acc_trigger = [VERBOSE, ACC, /* &carlos_session,  &LOCK, &UNLOCK,*/ &front_trigger, &left_trigger](cluon::data::Envelope &&envelope) {
+        auto acc_trigger = [&front_trigger, &left_trigger](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::trigger>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             front_trigger = msg.front_sensor();
             left_trigger = msg.left_sensor();
-
-            if (VERBOSE || ACC)
-            {
-                std::cout << "INBOX -> ACC intersection triggers. FRONT [" << front_trigger << "], LEFT [" << left_trigger << "]" << std::endl;
-            }
         };
 
         int16_t path = -1; //cmd service (1 = left, 2 = right, 0 = straight)
-        auto cmd_path = [VERBOSE, CMD, /* &carlos_session, &LOCK, &UNLOCK, */ &path](cluon::data::Envelope &&envelope) {
+        auto cmd_path = [&path](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::cmd::path>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             path = msg.turn();
-
-            if (VERBOSE || CMD)
-            {
-                std::cout << "INBOX -> CMD intersection path [" << path << "]" << std::endl;
-            }
         };
 
         bool sign_detected = false, sign_reached = false; //object service
-        auto object_sign = [VERBOSE, OBJECT, &STAGE, &STAGES, &carlos_session, &services, &LOCK, /*&UNLOCK, */ &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
+        auto object_sign = [&STAGE, &carlos_session, &services, &LOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::object::sign>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -148,11 +132,6 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(services.cmd);
                 carlos_session.send(services.color);
                 carlos_session.send(services.object);
-
-                if (VERBOSE || STAGES)
-                {
-                    std::cout << " STAGE set to [" << STAGE << "]" << std::endl;
-                }
             }
             if (sign_reached)
             {
@@ -169,35 +148,20 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(services.cmd);
                 carlos_session.send(services.color);
                 carlos_session.send(services.object);
-
-                if (VERBOSE || STAGES)
-                {
-                    std::cout << " STAGE set to [" << STAGE << "]" << std::endl;
-                }
-            }
-
-            if (VERBOSE || OBJECT)
-            {
-                std::cout << "INBOX -> Object Detection. SIGN DETECTED [" << sign_detected << "], SIGN REACHED [" << sign_reached << "]" << std::endl;
             }
         };
 
         float lead_car_coc = -1.0, lead_car_area = -1.0; //color service
-        auto color_lead_car = [VERBOSE, COLOR, /* &carlos_session, &LOCK, &UNLOCK, */ &lead_car_coc, &lead_car_area](cluon::data::Envelope &&envelope) {
+        auto color_lead_car = [&lead_car_coc, &lead_car_area](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::lead_car>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             lead_car_coc = msg.coc();
             lead_car_area = msg.area();
-
-            if (VERBOSE || COLOR)
-            {
-                std::cout << "INBOX -> COLOR Detection. Center Of Car [" << lead_car_coc << "], Area of Car [" << lead_car_area << "]" << std::endl;
-            }
         };
 
         bool north = false, east = false, west = false; //color service
-        auto color_intersection = [VERBOSE, COLOR, &STAGE, &STAGES, &carlos_session, &services, /*&LOCK, &UNLOCK, */ &north, &east, &west](cluon::data::Envelope &&envelope) {
+        auto color_intersection = [&STAGE, &carlos_session, &services, &UNLOCK, &north, &east, &west](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::intersection>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -210,6 +174,7 @@ int32_t main(int32_t argc, char **argv)
                 /*if north, east and west flags are false*/
                 STAGE = 3;
                 services.acc.stage(STAGE);
+                services.acc.semaphore(UNLOCK);
                 services.cmd.stage(STAGE);
                 services.color.stage(STAGE);
                 services.object.stage(STAGE);
@@ -219,42 +184,8 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(services.cmd);
                 carlos_session.send(services.color);
                 carlos_session.send(services.object);
-                if (VERBOSE || STAGES)
-                {
-                    std::cout << " STAGE set to [" << STAGE << "]" << std::endl;
-                }
-            }
-
-            if (VERBOSE || COLOR)
-            {
-                std::cout << "INBOX -> COLOR Detection. North [" << north << "], EAST [" << east << "]"
-                          << "], WEST [" << west << "]" << std::endl;
             }
         };
-
-        /* auto micro_services_announcement{[VERBOSE, STAGE, &carlos_session, &services]() -> bool {
-            services.acc.stage(STAGE);
-            services.cmd.stage(STAGE);
-            services.color.stage(STAGE);
-            services.object.stage(STAGE);
-
-            //send messages
-            carlos_session.send(services.acc);
-            carlos_session.send(services.cmd);
-            carlos_session.send(services.color);
-            carlos_session.send(services.object);
-
-            if (VERBOSE)
-            {
-                std::cout << "Pinged all micro-services in this session" << std::endl;
-            }
-            return true;
-        }}; */
-
-        /* if (FREQ > 0)
-        {
-            carlos_session.timeTrigger(FREQ, micro_services_announcement);
-        } */
 
         /*registers callbacks*/
         carlos_session.dataTrigger(carlos::acc::collision::ID(), acc_collision);
@@ -263,6 +194,15 @@ int32_t main(int32_t argc, char **argv)
         carlos_session.dataTrigger(carlos::object::sign::ID(), object_sign);
         carlos_session.dataTrigger(carlos::color::lead_car::ID(), color_lead_car);
         carlos_session.dataTrigger(carlos::color::intersection::ID(), color_intersection);
+
+        /*data*/
+        std::string stage_data = "stage->[" + std::to_string(STAGE) + "]";
+        std::string acc_collision_data = "acc_collision->[" + std::to_string(collision_warning) + "]";
+        std::string sign_data = "sign->[detected= " + std::to_string(sign_detected) + ",reached= " + std::to_string(sign_reached) + "]";
+        std::string intersection_data = "intersection->[west=" + std::to_string(west) + ", north=" + std::to_string(north) + ", east=" + std::to_string(east) + "]";
+        std::string cmd_data = "cmd->[" + std::to_string(path) + "]";
+        std::string res = stage_data;
+        //string acc_trigger_data = "acc_trigger->[front=" + front_trigger + ",left" + left_trigger + "]";
 
         while (carlos_session.isRunning())
         {
@@ -275,7 +215,23 @@ int32_t main(int32_t argc, char **argv)
 
             if (VERBOSE)
             {
-                std::cout << "Pinged all micro-services in this session" << std::endl;
+                if (VERBOSE || ACC)
+                {
+                    res = res + "," + acc_collision_data;
+                }
+                if (VERBOSE || OBJECT)
+                {
+                    res = res + "," + sign_data;
+                }
+                if (VERBOSE || COLOR)
+                {
+                    res = res + "," + intersection_data;
+                }
+                if (CMD)
+                {
+                    res = res + "," + cmd_data;
+                }
+                std::cout << res << std::endl;
             }
         }
     }

@@ -44,7 +44,6 @@ int32_t main(int32_t argc, char **argv)
   Rect temp, empty;
   Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2,resizedImg2;
   Scalar edge = Scalar(255, 255, 255);
-  Scalar redEdge = Scalar(0, 0, 255);
 
   //car sticker colors
   double car_low_H = 40, car_high_H = 94, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
@@ -169,8 +168,11 @@ int32_t main(int32_t argc, char **argv)
               car_rectangle[k] = boundingRect(car_polygons[k]);
               printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
               if(getPercentageOfWidth(car_contours[k],img) < img.size().width/100*30) westCar=true;
+              else westCar=false;
               if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*30 && getPercentageOfWidth(car_contours[k],img) < img.size().width/100*65) northCar=true;
+              else northCar=false;
               if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*65) eastCar=true;
+              else eastCar=false;
               cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             }
             groupRectangles(car_rectangle, 1, 0.7); //group overlapping rectangles

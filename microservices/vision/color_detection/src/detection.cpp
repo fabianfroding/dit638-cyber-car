@@ -153,7 +153,7 @@ int32_t main(int32_t argc, char **argv)
         signStatus.reached(stopSignDetected);
         carlos_session.send(signStatus);
 
-        cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
+        //cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
         car_contours = getContours(img_hsv, car_low, car_high);
         car_polygons.resize(car_contours.size());
         car_rectangle.resize(car_contours.size());
@@ -166,16 +166,16 @@ int32_t main(int32_t argc, char **argv)
             if (arcLength(car_contours[k], false) > 120)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
-              printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
+              //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
               if(getPercentageOfWidth(car_contours[k],img) < img.size().width/100*30) westCar=true;
               else westCar=false;
               if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*30 && getPercentageOfWidth(car_contours[k],img) < img.size().width/100*65) northCar=true;
               else northCar=false;
               if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*65) eastCar=true;
               else eastCar=false;
-              cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             }
             groupRectangles(car_rectangle, 1, 0.7); //group overlapping rectangles
+            cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             drawRectangle(car_rectangle[k], resizedImg, edge);
 
             //create the envelope containing this data

@@ -23,7 +23,7 @@ double getAreaOfContour(vector<Point> contour);
 double getPerimeterOfContour(vector<Point> contour);
 void drawRectangle(Rect rectangle, Mat image, Scalar color);
 float getPercentageOfWidth(vector<Point> contour, Mat image);
-void printRectangleLocation(vector<Point> contour, Mat image, String object);
+void printRectangleLocation(vector<Point> contour, Mat image);
 vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_high);
 
 int32_t main(int32_t argc, char **argv)
@@ -167,7 +167,7 @@ int32_t main(int32_t argc, char **argv)
             if (arcLength(car_contours[k], false) > 120)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
-              printRectangleLocation(car_contours[k], resizedImg, "car"); //coordinates and position of the center of each rectangle
+              printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
               if(getPercentageOfWidth(car_contours[k],img) < img.size().width/100*30) westCar=true;
               if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*30 && getPercentageOfWidth(car_contours[k],img) < img.size().width/100*65) northCar=true;
               if(getPercentageOfWidth(car_contours[k],img) > img.size().width/100*65) eastCar=true;

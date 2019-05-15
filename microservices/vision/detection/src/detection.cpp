@@ -36,8 +36,8 @@ int32_t main(int32_t argc, char **argv)
   //**VARIABLES**//
   int32_t retCode{1};
   bool stopSignPresent = false, stopSignDetected = false;
-  String car_cascade_name;
-  CascadeClassifier car_cascade;
+  String stopSigns_cascade_name;
+  CascadeClassifier stopSigns_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
   vector<Rect> car_rectangle, stop_rectangle;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
@@ -55,8 +55,8 @@ int32_t main(int32_t argc, char **argv)
   Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
 
-  car_cascade_name = parser.get<String>("car_cascade");
-  if (!car_cascade.load(car_cascade_name))
+  stopSigns_cascade_name = parser.get<String>("stopSigns_cascade");
+  if (!stopSigns_cascade.load(stopSigns_cascade_name))
   {
     cout << "--(!)Error loading car cascade\n";
     return -1;
@@ -92,25 +92,13 @@ int32_t main(int32_t argc, char **argv)
       // cout<<"hello!"<<flush;
       // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
       cluon::OD4Session carlos_session{CARLOS_SESSION};
-      cluon::OD4Session kiwi_session{CID_SESSION};
+      cluon::OD4Session car_session{CID_SESSION};
 
       opendlv::proxy::GroundSteeringRequest wheel;
       carlos::color::lead_car lead_car;
       carlos::color::intersection intersection_tracker;
       carlos::color::status status;
-<<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
-<<<<<<< HEAD:microservices/vision/color_detection/src/detection.cpp
-<<<<<<< HEAD:microservices/vision/color_detection/src/color.cpp
-
-=======
       carlos::object::sign signStatus;
->>>>>>> color_detection:microservices/vision/color_detection/src/detection.cpp
-=======
-      carlos::object::sign signStatus;
->>>>>>> detection-msg:microservices/vision/detection/src/detection.cpp
-=======
-      carlos::object::sign signStatus;
->>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
       // carlos::vision::sign sign_tracker;
 
       bool SEMAPHORE = true;
@@ -126,7 +114,7 @@ int32_t main(int32_t argc, char **argv)
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
 
       // Endless loop; end the program by pressing Ctrl-C.
-      while (carlos_session.isRunning() || kiwi_session.isRunning())
+      while (carlos_session.isRunning() || car_session.isRunning())
       {
         // Wait for a notification of a new frame.
         sharedMemory->wait();
@@ -147,6 +135,7 @@ int32_t main(int32_t argc, char **argv)
 
         resize(img, resizedImg, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
         resize(img2, resizedImg2, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img2.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
+        //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
@@ -154,35 +143,6 @@ int32_t main(int32_t argc, char **argv)
         stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
         size_t nStopSigns = stopSigns.size();
 
-<<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
-<<<<<<< HEAD:microservices/vision/color_detection/src/detection.cpp
-        if (cars.size() != 0)
-        {
-          for (size_t i = 0; i < cars.size(); i++)
-          {
-            Point center(cars[i].x + cars[i].width / 2, cars[i].y + cars[i].height / 2);
-            ellipse(resizedImg, center, Size(cars[i].width / 2, cars[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
-=======
-        if (cars.size() != 0)
-        {
-          for (size_t i = 0; i < cars.size(); i++)
-          {
-            Point center(cars[i].x + cars[i].width / 2, cars[i].y + cars[i].height / 2);
-            ellipse(resizedImg, center, Size(cars[i].width / 2, cars[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
->>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
-          }
-        }
-        if (stopSignPresent == true && cars.size() == 0)
-        {
-          stopSignPresent = false;
-          stopSignDetected = true;
-        }
-<<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
-        else if (cars.size() > 0)
-        {
-          stopSignPresent = true;
-          stopSignDetected = true;
-=======
         if (nStopSigns != 0)
         {
           for (size_t i = 0; i < nStopSigns; i++)
@@ -201,7 +161,6 @@ int32_t main(int32_t argc, char **argv)
         {
           stopSignPresent = true;
           stopSignDetected = true;
->>>>>>> detection-msg:microservices/vision/detection/src/detection.cpp
         }
         // If stop sign has been detected and is present, we tell delegator that stop sign is detected.
         // If stop sign has been detected but is not present, we tell delegator that stop sign is reached.
@@ -219,23 +178,9 @@ int32_t main(int32_t argc, char **argv)
             signStatus.reached(true);
           }
           carlos_session.send(signStatus);
-=======
-        else if (cars.size() > 0)
-        {
-          stopSignPresent = true;
-          stopSignDetected = true;
->>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
         }
 
-<<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
-<<<<<<< HEAD:microservices/vision/color_detection/src/detection.cpp
-        cout << "Stop sign present: " << stopSignPresent << "| detected: " << stopSignDetected << flush << endl;
-=======
         cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
->>>>>>> detection-msg:microservices/vision/detection/src/detection.cpp
-=======
-        cout << "Stop sign present: " << stopSignPresent << "| detected: " << stopSignDetected << flush << endl;
->>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());
@@ -281,7 +226,7 @@ int32_t main(int32_t argc, char **argv)
             wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
             if (SEMAPHORE)
             {
-              kiwi_session.send(wheel); //send to car
+              car_session.send(wheel); //send to car
             }
             lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
             lead_car.area(car_rectangle[k].area());                          //area                            //number of cars queued
@@ -294,15 +239,7 @@ int32_t main(int32_t argc, char **argv)
         if (VERBOSE)
         {
           imshow(sharedMemory->name().c_str(), resizedImg);
-<<<<<<< HEAD:microservices/vision/detection/src/detection.cpp
-<<<<<<< HEAD:microservices/vision/color_detection/src/detection.cpp
           //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
-=======
-          //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
->>>>>>> detection-msg:microservices/vision/detection/src/detection.cpp
-=======
-          //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
->>>>>>> b862d6f923c49a6bdb6e1e0c254f19530917f320:microservices/vision/color_detection/src/detection.cpp
           waitKey(1);
         }
       }

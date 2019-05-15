@@ -10,8 +10,7 @@
 
 #include "cluon-complete.hpp"
 #include "messages.hpp"
-
-float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE);
+#include "envelopes.hpp"
 
 /*main*/
 int32_t main(int32_t argc, char **argv)
@@ -26,96 +25,145 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
         std::cerr << argv[0] << "[--sd=<front/back safety space>]" << std::endl;
         std::cerr << argv[0] << "[--sp=<speed, min is 0.13 and max is 0.8>]" << std::endl;
+        std::cerr << argv[0] << "[--trig=<trigger distance>]" << std::endl;
+        std::cerr << argv[0] << "[--verbose]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
-        std::cerr << "example:  " << argv[0] << " --cid=112 --sd=0.2 --sp=013" << std::endl;
+        std::cerr << "example:  " << argv[0] << " --cid=112 --carlos=113 --verbose --sd=0.2 --sp=013" << std::endl;
         return -1;
     }
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t CID{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
     const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.30)};
-    const float MAX_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
+    const float USER_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
+    const float INTERSECTION{(commandlineArguments.count("trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["trig"])) : static_cast<float>(0.15)};
 
-    if (VERBOSE)
-    {
-        std::cout << "starting up " << argv[0] << "..." << std::endl;
-        std::cout << "speed: [" << MAX_SPEED << "], front saftey distance: [" << SAFE_DISTANCE << " meters]" << std::endl;
-    }
-
-    /**
-     * create a od4session object that will allow all microservices
-     * with the same secret number to send and recieve messages from
-     * one another
-    */
+    std::cout << "starting up " << argv[0] << "..." << std::endl;
+    std::cout << "speed: [" << USER_SPEED << "], front saftey distance: [" << SAFE_DISTANCE << " meters]" << std::endl;
 
     cluon::OD4Session carlos_session{CARLOS_SESSION}; //needed to send messages to carlos session
-    cluon::OD4Session car_session{CID};               //needed to recieve data from sensors
+    cluon::OD4Session kiwi_session{CID};              //needed to recieve data from sensors
 
-    if (car_session.isRunning())
+    if (kiwi_session.isRunning())
     {
         if (VERBOSE)
         {
             std::cout << "[acc] micro-service started..." << std::endl;
         }
 
-        carlos::acc acc_status;                     //danger (if distance is below saftey distance)
-        opendlv::proxy::PedalPositionRequest pedal; //position (speed of vehicle)
+        bool SEMAPHORE = true;
+        int16_t STAGE = 0;
+        float SPEED = 0, PREV_SPEED = SPEED;
 
-        bool SEMAPHORE_KEY = true;
-
-        /*sends front sensor messages to carlos delegator*/
-        auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
+        /*callbacks*/
+        auto get_status = [VERBOSE, &SEMAPHORE, &STAGE, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
-            auto msg = cluon::extractMessage<carlos::semaphore::acc>(std::move(envelope));
+            auto msg = cluon::extractMessage<carlos::acc::status>(std::move(envelope));
             /*store data*/
-            SEMAPHORE_KEY = msg.semaphore();
+            SEMAPHORE = msg.semaphore();
+            STAGE = msg.stage();
+
+            if (!SEMAPHORE)
+            {
+                opendlv::proxy::PedalPositionRequest pedal; //kiwi
+                pedal.position(0);
+                kiwi_session.send(pedal);
+            }
 
             if (VERBOSE)
             {
-                std::cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
+                if (SEMAPHORE)
+                {
+                    std::cout << "RECIEVED -> SEMAPHORE [UNLOCKED]" << std::endl;
+                }
+                else
+                {
+                    std::cout << "RECIEVED -> SEMAPHORE [LOCKED]" << std::endl;
+                }
             }
         };
 
-        auto sensors = [VERBOSE, SAFE_DISTANCE, MAX_SPEED, &car_session, &carlos_session, &SEMAPHORE_KEY, &pedal, &acc_status](cluon::data::Envelope &&envelope) {
+        opendlv::proxy::PedalPositionRequest pedal; //kiwi
+        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
-            const uint16_t senderStamp = envelope.senderStamp();
-            /*store sender data*/
-            float distance = msg.distance();
+            const uint16_t senderStamp = envelope.senderStamp(), front_sensor = 0, left_sensor = 1;
+            /*store sensor data*/
+            float sensor = msg.distance();
 
-            if (senderStamp == 0)
+            carlos::acc::collision collision_status; //carlos
+            carlos::acc::trigger trigger;            //carlos
+
+            if (senderStamp == front_sensor)
             {
-                /**
-                 * only get data fron sender 0 (front sensor)
-                 * */
-
-                /*get front sensor value*/
-                float frontSensor = distance;
-                /*do stuff with data*/
-
-                /*pedal*/
-                float speed = autoPedal(frontSensor, SAFE_DISTANCE, MAX_SPEED, VERBOSE);
-                pedal.position(speed);
-                if (SEMAPHORE_KEY)
+                if (STAGE != 2)
                 {
-                    car_session.send(pedal);
-                }
+                    if (sensor < SAFE_DISTANCE)
+                    {
+                        SPEED = 0;
+                        pedal.position(SPEED);
 
-                /*acc status*/
-                acc_status.safe_to_drive((frontSensor > SAFE_DISTANCE) ? true : false); //if front sensor is safe, set to true, else set to false
-                /*send object to carlos delegator*/
-                carlos_session.send(acc_status);
+                        if (VERBOSE)
+                        {
+                            std::cout << "Sent stop instructions. Object Detected at [" << sensor << "]" << std::endl;
+                        }
+                    }
+                    else
+                    {
+                        SPEED = USER_SPEED;
+                        pedal.position(SPEED);
+
+                        if (VERBOSE)
+                        {
+                            std::cout << "Sent move instructions at speed [" << SPEED << "]" << std::endl;
+                        }
+                    }
+                }
+                else
+                {
+                    //intersection
+                    if (sensor < INTERSECTION)
+                    {
+                        trigger.front_sensor(true);
+                    }
+                    else
+                    {
+                        trigger.front_sensor(false);
+                    }
+                    carlos_session.send(trigger);
+                }
+                collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
+                carlos_session.send(collision_status);
+                PREV_SPEED = SPEED;
+            }
+
+            if ((senderStamp == left_sensor) && STAGE == 2)
+            {
+                //intersection
+                if (sensor < INTERSECTION)
+                {
+                    trigger.left_sensor(true);
+                }
+                else
+                {
+                    trigger.left_sensor(false);
+                }
+                carlos_session.send(trigger);
             }
         };
 
         /*registers callbacks*/
-        car_session.dataTrigger(opendlv::proxy::DistanceReading::ID(), sensors);
-        carlos_session.dataTrigger(carlos::semaphore::acc::ID(), semaphore);
+        carlos_session.dataTrigger(carlos::acc::status::ID(), get_status);
+        kiwi_session.dataTrigger(opendlv::proxy::DistanceReading::ID(), get_sensor_information);
 
-        while (car_session.isRunning())
+        while (kiwi_session.isRunning())
         {
             /* just run this microservice until ist crashes */
+            if (SEMAPHORE && (SPEED != PREV_SPEED))
+            {
+                kiwi_session.send(pedal);
+            }
         }
     }
     else
@@ -123,41 +171,4 @@ int32_t main(int32_t argc, char **argv)
         std::cout << "Carlos Out. (OD4Session timed out.)" << std::endl;
     }
     return 0;
-}
-
-/*functions*/
-
-float autoPedal(float front_sensor, float SAFE_DISTANCE, float MAX_SPEED, bool VERBOSE)
-{
-    const float neutral = 0.0;
-    float result = neutral;
-
-    if (front_sensor <= SAFE_DISTANCE)
-    {
-        /**
-        * front sensor detects something
-        * stop car
-        * */
-        result = neutral;
-
-        if (VERBOSE)
-        {
-            std::cout << "Sent stop instructions. Object Detected at [" << front_sensor << "]" << std::endl;
-        }
-    }
-
-    if (front_sensor > SAFE_DISTANCE)
-    {
-        /**
-        * front sensor is clear
-        * move car forward
-        * */
-        result = MAX_SPEED;
-
-        if (VERBOSE)
-        {
-            std::cout << "Sent move instructions at speed [" << result << "]" << std::endl;
-        }
-    }
-    return result;
 }

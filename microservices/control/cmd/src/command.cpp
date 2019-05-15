@@ -10,6 +10,7 @@
 
 #include "cluon-complete.hpp"
 #include "messages.hpp"
+#include "envelopes.hpp"
 
 int32_t main(int32_t argc, char **argv)
 {
@@ -23,6 +24,7 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--cid=<ID of KIWI session>]" << std::endl;
         std::cerr << argv[0] << "[--turn=<turn angle>]" << std::endl;
         std::cerr << argv[0] << "[--verbose] print information" << std::endl;
+        std::cerr << argv[0] << "[--debug] configure turns" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--cid=112 --carlos=113 --verbose" << std::endl;
         return -1;
@@ -30,89 +32,152 @@ int32_t main(int32_t argc, char **argv)
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const float TURN{(commandlineArguments.count("turn") != 0) ? static_cast<float>(std::stof(commandlineArguments["turn"])) : static_cast<float>(0.2)};
+    const float SP{(commandlineArguments.count("speed") != 0) ? static_cast<float>(std::stof(commandlineArguments["speed"])) : static_cast<float>(0.14)};
+    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(1)};
+    const bool DEBUG{commandlineArguments.count("debug") != 0};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
 
     if (VERBOSE)
     {
         std::cout << "starting up " << argv[0] << "..." << std::endl;
         std::cout << "turn: [" << TURN << "]" << std::endl;
+        std::cout << "speed: [" << SP << "]" << std::endl;
+        std::cout << "delay: [" << DELAY << "]" << std::endl;
+        std::cout << "turn: [" << TURN << "]" << std::endl;
     }
 
-    /**
-     * create a od4session object that will allow all microservices
-     * with the same secret number to send and recieve messages from
-     * one another
-    */
     cluon::OD4Session carlos_session{CARLOS_SESSION};
-    cluon::OD4Session car_session{CID_SESSION};
+    cluon::OD4Session kiwi_session{CID_SESSION};
 
-    if (car_session.isRunning())
+    if (kiwi_session.isRunning())
     {
         if (VERBOSE)
         {
             std::cout << "session started..." << std::endl;
         }
 
-        /**
-        * set up messages that you might send
-        */
+        bool SEMAPHORE = true;
+        int16_t STAGE = 0;
 
-        carlos::command cmd;                         //[carlos] turn_type
-        opendlv::proxy::GroundSteeringRequest wheel; //[car] groundSteering
-
-        bool SEMAPHORE_KEY = true;
-        const int16_t left = 2, right = 1, neutral = 0;
-        const float turnRight = TURN * -1, turnLeft = TURN, turnStraight = 0;
-        int userInp = -1;
-
-        auto semaphore = [VERBOSE, &SEMAPHORE_KEY](cluon::data::Envelope &&envelope) {
+        /*callbacks*/
+        auto get_status = [&SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
-            auto msg = cluon::extractMessage<carlos::semaphore::cmd>(std::move(envelope));
+            auto msg = cluon::extractMessage<carlos::cmd::status>(std::move(envelope));
             /*store data*/
-            SEMAPHORE_KEY = msg.semaphore();
-
-            if (VERBOSE)
-            {
-                std::cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << std::endl;
-            }
+            SEMAPHORE = msg.semaphore();
+            STAGE = msg.stage();
         };
 
-        carlos_session.dataTrigger(carlos::semaphore::cmd::ID(), semaphore);
+        carlos_session.dataTrigger(carlos::cmd::status::ID(), get_status);
 
-        while (car_session.isRunning())
+        opendlv::proxy::GroundSteeringRequest wheel; //[car] groundSteering
+        opendlv::proxy::PedalPositionRequest pedal;  //[car] pedal position
+        carlos::cmd::path command;
+
+        float turn = TURN;
+        float speed = SP;
+        uint16_t delay_time = DELAY, message = 0;
+
+        while (kiwi_session.isRunning())
         {
-            std::cout << "press: " << std::endl;
-            std::cout << "[" << left << "] for left turn" << std::endl;
-            std::cout << "[" << right << "] for right turn" << std::endl;
-            std::cout << "[" << neutral << "] for neutral" << std::endl;
-            //take in input
-            scanf("%d", &userInp);
-
-            switch (userInp)
+            if (SEMAPHORE)
             {
-            case left:
-                cmd.turn_type(left);
-                wheel.groundSteering(turnLeft);
-                std::cout << "Wheel is turning [Left]" << std::endl;
-                break;
-            case right:
-                cmd.turn_type(right);
-                wheel.groundSteering(turnRight);
-                std::cout << "Wheel is turning [Right]" << std::endl;
-                break;
-            case neutral:
-                cmd.turn_type(neutral);
-                wheel.groundSteering(turnStraight);
-                std::cout << "Wheel is [Straight]" << std::endl;
-                break;
-            }
-            //send data
-            if (SEMAPHORE_KEY)
-            {
-                car_session.send(wheel);
-            }
+                if (DEBUG)
+                {
+                    std::cout << "turn angle:" << std::endl;
+                    scanf("%f", &turn);
+                    std::cout << "speed:" << std::endl;
+                    scanf("%f", &speed);
+                    std::cout << "delay:" << std::endl;
+                    scanf("%hd", &delay_time);
+                    std::cout << "message:" << std::endl;
+                    scanf("%hd", &message);
 
-            carlos_session.send(cmd);
+                    if ((-0.6 <= turn && turn <= 0.6) && speed >= 0 /*  && delay_time >= 0 */)
+                    {
+                        //turn wheel
+                        wheel.groundSteering(turn);
+                        kiwi_session.send(wheel);
+
+                        //speed
+                        pedal.position(speed);
+                        kiwi_session.send(pedal);
+
+                        //delay
+                        std::chrono::milliseconds timer(delay_time); // or whatever
+                        std::this_thread::sleep_for(timer);
+
+                        //stop vehicle
+                        pedal.position(0);
+                        kiwi_session.send(pedal);
+
+                        //straighten wheel
+                        wheel.groundSteering(0);
+                        kiwi_session.send(wheel);
+
+                        command.turn(message);
+                        carlos_session.send(command);
+                    }
+                    else
+                    {
+                        std::cout << "ERROR" << std::endl;
+                        if (!(-0.6 <= turn && turn <= 0.6))
+                        {
+                            std::cout << "the turn angle should be between -0.6 and 0.6" << std::endl;
+                        }
+                        if (!(speed >= 0))
+                        {
+                            std::cout << "the speed should be greater than or equal to 0" << std::endl;
+                        }
+                        /* if (!(delay_time >= 0))
+                    {
+                        std::cout << "the delay time should be greater than or equal to 0" << std::endl;
+                    } */
+                    }
+                    if (turn == 0 && speed == 0 && delay_time == 0)
+                    {
+                        std::cout << "DEBUG session ended." << std::endl;
+                        break;
+                    }
+                }
+                else
+                {
+                    if (STAGE == 3)
+                    {
+                        const int16_t left = 1, right = 2, neutral = 0;
+                        int16_t userInp = -1;
+                        /*leaving intersection*/
+                        std::cout << "press: " << std::endl;
+                        std::cout << "[" << left << "] for left turn" << std::endl;
+                        std::cout << "[" << right << "] for right turn" << std::endl;
+                        std::cout << "[" << neutral << "] for neutral" << std::endl;
+                        //take in input
+                        scanf("%hd", &userInp);
+
+                        switch (userInp)
+                        {
+                        case left:
+                            std::cout << "Carlos is turning [Left]" << std::endl;
+                            break;
+                        case right:
+                            std::cout << "Carlos is turning [Right]" << std::endl;
+                            break;
+                        case neutral:
+                            std::cout << "Carlos is [Straight]" << std::endl;
+                            break;
+                        }
+                        //send data
+                        if (SEMAPHORE)
+                        {
+                            kiwi_session.send(wheel);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                std::cout << "RECIEVED -> SEMAPHORE [LOCKED]" << std::endl;
+            }
         }
     }
     else

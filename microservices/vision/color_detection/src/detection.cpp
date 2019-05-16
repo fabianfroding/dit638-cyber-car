@@ -159,26 +159,25 @@ int32_t main(int32_t argc, char **argv)
         car_rectangle.resize(car_contours.size());
 
         //**PROCESS CAR GREEN DETECTION**
-        if (car_contours.size() > 0)
           for (size_t k = 0; k < car_contours.size(); k++)
           {
+            eastCar=false; northCar=false; westCar=false;
             approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
             if (arcLength(car_contours[k], false) > 120)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
               if(getCenterOfContour(car_contours[k]).x < resizedImg.size().width/100*30) westCar=true;
-              else westCar=false;
+            //  else westCar=false;
               if(getCenterOfContour(car_contours[k]).x >= resizedImg.size().width/100*30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width/100*65) northCar=true;
-              else northCar=false;
+              //else northCar=false;
               if(getCenterOfContour(car_contours[k]).x > resizedImg.size().width/100*65) eastCar=true;
-              else eastCar=false;
+              //else eastCar=false;
             }
-            else {westCar=false; eastCar=false; northCar=false;}
-            groupRectangles(car_rectangle, 1, 0.7); //group overlapping rectangles
-            cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
+            groupRectangles(car_rectangle, 3, 0.7); //group overlapping rectangles
             drawRectangle(car_rectangle[k], resizedImg, edge);
-
+          }
+            cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             //create the envelope containing this data
             wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
             if (SEMAPHORE)
@@ -194,7 +193,6 @@ int32_t main(int32_t argc, char **argv)
             intersection_tracker.north(northCar);
             intersection_tracker.east(eastCar);
             carlos_session.send(intersection_tracker);
-          }
 
         //message sending stopped
         // Display image.

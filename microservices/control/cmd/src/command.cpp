@@ -51,10 +51,7 @@ int32_t main(int32_t argc, char **argv)
 
     if (kiwi_session.isRunning())
     {
-        if (VERBOSE)
-        {
-            std::cout << "session started..." << std::endl;
-        }
+        std::cout << "session started..." << std::endl;
 
         bool SEMAPHORE = true;
         int16_t STAGE = 0;
@@ -68,7 +65,23 @@ int32_t main(int32_t argc, char **argv)
             STAGE = msg.stage();
         };
 
+        bool turn_west = true, turn_north = true, turn_east = true;
+        auto turn_status = [VERBOSE, &turn_west, &turn_north, &turn_east](cluon::data::Envelope &&envelope) {
+            /** unpack message recieved*/
+            auto msg = cluon::extractMessage<carlos::cmd::turn_status>(std::move(envelope));
+            /*store data*/
+            turn_west = msg.turn_west();
+            turn_north = msg.turn_north();
+            turn_east = msg.turn_east();
+
+            if (VERBOSE)
+            {
+                std::cout << "session started..." << std::endl;
+            }
+        };
+
         carlos_session.dataTrigger(carlos::cmd::status::ID(), get_status);
+        carlos_session.dataTrigger(carlos::cmd::turn_status::ID(), turn_status);
 
         opendlv::proxy::GroundSteeringRequest wheel; //[car] groundSteering
         opendlv::proxy::PedalPositionRequest pedal;  //[car] pedal position
@@ -140,37 +153,35 @@ int32_t main(int32_t argc, char **argv)
                         break;
                     }
                 }
-                else
-                {
-                    if (STAGE == 3)
-                    {
-                        const int16_t left = 1, right = 2, neutral = 0;
-                        int16_t userInp = -1;
-                        /*leaving intersection*/
-                        std::cout << "press: " << std::endl;
-                        std::cout << "[" << left << "] for left turn" << std::endl;
-                        std::cout << "[" << right << "] for right turn" << std::endl;
-                        std::cout << "[" << neutral << "] for neutral" << std::endl;
-                        //take in input
-                        scanf("%hd", &userInp);
 
-                        switch (userInp)
-                        {
-                        case left:
-                            std::cout << "Carlos is turning [Left]" << std::endl;
-                            break;
-                        case right:
-                            std::cout << "Carlos is turning [Right]" << std::endl;
-                            break;
-                        case neutral:
-                            std::cout << "Carlos is [Straight]" << std::endl;
-                            break;
-                        }
-                        //send data
-                        if (SEMAPHORE)
-                        {
-                            kiwi_session.send(wheel);
-                        }
+                if (STAGE == 3)
+                {
+                    const int16_t left = 1, right = 2, neutral = 0;
+                    int16_t userInp = -1;
+                    /*leaving intersection*/
+                    std::cout << "press: " << std::endl;
+                    std::cout << "[" << left << "] for left turn" << std::endl;
+                    std::cout << "[" << right << "] for right turn" << std::endl;
+                    std::cout << "[" << neutral << "] for neutral" << std::endl;
+                    //take in input
+                    scanf("%hd", &userInp);
+
+                    switch (userInp)
+                    {
+                    case left:
+                        std::cout << "Carlos is turning [Left]" << std::endl;
+                        break;
+                    case right:
+                        std::cout << "Carlos is turning [Right]" << std::endl;
+                        break;
+                    case neutral:
+                        std::cout << "Carlos is [Straight]" << std::endl;
+                        break;
+                    }
+                    //send data
+                    if (SEMAPHORE)
+                    {
+                        kiwi_session.send(wheel);
                     }
                 }
             }

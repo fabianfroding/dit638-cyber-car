@@ -46,7 +46,7 @@ int32_t main(int32_t argc, char **argv)
         // carlos::acc::trigger trigger;
 
         // //command
-        // carlos::cmd::path command;
+        // carlos::cmd::turn_status intersection_command;
 
         //delay
         std::chrono::milliseconds timer(DELAY);

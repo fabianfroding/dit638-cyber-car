@@ -163,21 +163,27 @@ int32_t main(int32_t argc, char **argv)
           {
             eastCar=false; northCar=false; westCar=false;
             approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-            if (arcLength(car_contours[k], false) > 120)
+            if (arcLength(car_contours[k], false) > 200)
             {
+              drawRectangle(car_rectangle[k], resizedImg, edge);
               car_rectangle[k] = boundingRect(car_polygons[k]);
               //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
-              if(getCenterOfContour(car_contours[k]).x < resizedImg.size().width/100*30) westCar=true;
+              if(getPercentageOfWidth(car_contours[k],resizedImg)<0.3) westCar=true;
             //  else westCar=false;
-              if(getCenterOfContour(car_contours[k]).x >= resizedImg.size().width/100*30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width/100*65) northCar=true;
+              if(getPercentageOfWidth(car_contours[k],resizedImg) >= 0.5 && getPercentageOfWidth(car_contours[k],resizedImg) <= 0.65) northCar=true;
               //else northCar=false;
-              if(getCenterOfContour(car_contours[k]).x > resizedImg.size().width/100*65) eastCar=true;
+              if(getPercentageOfWidth(car_contours[k],resizedImg) > 0.65) eastCar=true;
               //else eastCar=false;
             }
             groupRectangles(car_rectangle, 3, 0.7); //group overlapping rectangles
-            drawRectangle(car_rectangle[k], resizedImg, edge);
           }
             cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
+            //create the envelope containing this data
+
+            //send messages
+          /*  lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
+            lead_car.area(car_rectangle[k].area()); //area
+            carlos_session.send(lead_car); //send the message to the delegator*/
             //send intersection message
             intersection_tracker.west(westCar);
             intersection_tracker.north(northCar);

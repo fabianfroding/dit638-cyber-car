@@ -27,13 +27,13 @@ int32_t main(int32_t argc, char **argv)
 
     if (0 != commandlineArguments.count("help"))
     {
-        std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
+        std::cerr << argv[0] << " is an management tool for Carlos micro-services." << std::endl;
         std::cerr << "Usage:" << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
-        std::cerr << argv[0] << "[--verbose]" << std::endl;
-        std::cerr << argv[0] << "[--acc]" << std::endl;
-        std::cerr << argv[0] << "[--cmd]" << std::endl;
-        std::cerr << argv[0] << "[--color]" << std::endl;
-        std::cerr << argv[0] << "[--object]" << std::endl;
+        std::cerr << argv[0] << "[--verbose] see EVERYTHING" << std::endl;
+        std::cerr << argv[0] << "[--acc] filter the acc messages" << std::endl;
+        std::cerr << argv[0] << "[--cmd] filter the acc messages" << std::endl;
+        std::cerr << argv[0] << "[--color] filter the acc messages" << std::endl;
+        std::cerr << argv[0] << "[--object] filter the acc messages" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--verbose --object" << std::endl;
         return -1;

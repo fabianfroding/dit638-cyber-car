@@ -167,11 +167,11 @@ int32_t main(int32_t argc, char **argv)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
-              if(getCenterOfContour(car_contours[k]) < resizedImg.size().width/100*30) westCar=true;
+              if(getCenterOfContour(car_contours[k]).x < resizedImg.size().width/100*30) westCar=true;
               else westCar=false;
-              if(getCenterOfContour(car_contours[k]) >= resizedImg.size().width/100*30 && getCenterOfContour(car_contours[k]) <= resizedImg.size().width/100*65) northCar=true;
+              if(getCenterOfContour(car_contours[k]).x >= resizedImg.size().width/100*30 && getCenterOfContour(car_contours[k]) <= resizedImg.size().width/100*65) northCar=true;
               else northCar=false;
-              if(getCenterOfContour(car_contours[k]) > resizedImg.size().width/100*65) eastCar=true;
+              if(getCenterOfContour(car_contours[k]).x > resizedImg.size().width/100*65) eastCar=true;
               else eastCar=false;
             }
             else {westCar=false; eastCar=false; northCar=false;}

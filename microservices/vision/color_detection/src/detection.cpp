@@ -178,16 +178,6 @@ int32_t main(int32_t argc, char **argv)
             drawRectangle(car_rectangle[k], resizedImg, edge);
           }
             cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
-            //create the envelope containing this data
-            wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
-            if (SEMAPHORE)
-            {
-              kiwi_session.send(wheel); //send to car
-            }
-            //send messages
-            lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
-            lead_car.area(car_rectangle[k].area()); //area
-            carlos_session.send(lead_car); //send the message to the delegator
             //send intersection message
             intersection_tracker.west(westCar);
             intersection_tracker.north(northCar);

@@ -59,6 +59,8 @@ int main(int argc, char** argv) {
     Mat frame;
     float framesCounted = 0;
     float objectsCounted = 0;
+    bool stopSignDetected = false;
+    bool stopSignPresent = false;
     while (capture.read(frame)) {
         if (frame.empty()) {
             cout << "Error: No captured frame." << endl;
@@ -71,11 +73,45 @@ int main(int argc, char** argv) {
 		objectsCounted += (double)nObjects;
 		framesCounted++;
 		cout << nObjects << endl;
-		if (framesCounted >= 5) {
+		/*if (framesCounted >= 5) {
 			cout << "avg objects detected of last 5 frames: " << int((objectsCounted / 5) + 0.5) << endl;
 			framesCounted = 0;
 			objectsCounted = 0;
+		}*/
+		
+		//==============================
+		// OBJECT DETECTION
+		//==============================
+        size_t nStopSigns = (size_t)nObjects;
+        objectsCounted += (double)nStopSigns;
+		framesCounted++;
+		
+		if (framesCounted >= 5) {
+			int avgObjects = int((objectsCounted / 5) + 0.5);
+			cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
+			framesCounted = 0;
+			objectsCounted = 0;
+		    
+		    stopSignPresent = (0 < avgObjects) ? true : false;
+	    	if (stopSignPresent) {
+	    		stopSignDetected = true;
+	    	}
+	    	if (stopSignPresent && stopSignDetected) {
+	    		//signStatus.detected(true);
+	    		//signStatus.reached(false);
+	    		cout << "detected: true | reached: false" << endl;
+	    	} else if (!stopSignPresent && stopSignDetected) {
+	    		//signStatus.detected(false);
+	    		//signStatus.reached(true);
+	    		cout << "detected: false | reached: true" << endl;
+	    	}
+	    	if (stopSignDetected) {
+	    		//carlos_session.send(signStatus);
+	    		cout << "sending to carlos" << endl;
+	    	}
 		}
+        cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
+        //==============================
 
 		//===============
 		// SEND MESSAGE HERE

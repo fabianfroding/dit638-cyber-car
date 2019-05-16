@@ -121,7 +121,7 @@ int32_t main(int32_t argc, char **argv)
             /*STAGE LOGIC*/
             if (!(sign_detected == false) && !(sign_reached == false))
             {
-                if (sign_detected && sign_reached == false)
+                if (sign_detected && (sign_reached == false))
                 {
                     STAGE = 1;
                     services.acc.stage(STAGE);
@@ -135,7 +135,7 @@ int32_t main(int32_t argc, char **argv)
                     carlos_session.send(services.color);
                     carlos_session.send(services.object);
                 }
-                if (sign_reached && sign_detected == false)
+                if (sign_reached && (sign_detected == false))
                 {
                     STAGE = 2;
 

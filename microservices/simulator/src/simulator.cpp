@@ -21,9 +21,8 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << " is a simulator that tests tests how microservices react to events." << std::endl;
         std::cerr << "Usage:" << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
         std::cerr << argv[0] << "[--verbose]" << std::endl;
-        std::cerr << argv[0] << "[--delay]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
-        std::cerr << "example:  " << argv[0] << "--carlos=113 --verbose --object" << std::endl;
+        std::cerr << "example:  " << argv[0] << "--carlos=113 --verbose" << std::endl;
         return -1;
     }
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
@@ -85,11 +84,11 @@ int32_t main(int32_t argc, char **argv)
 
                 int16_t west_sign = -1, north_sign = -1, east_sign = -1;
                 std::cout << "Choose whether the lanes are accesible or not" << std::endl;
-                std::cout << "enter 1 to lock the east lane or 0 to unlock the west lane" << std::endl;
+                std::cout << "enter [1] to lock or [0] to unlock the west lane" << std::endl;
                 scanf("%hd", &west_sign);
-                std::cout << "enter 1 to lock the east lane or 0 to unlock the north lane" << std::endl;
+                std::cout << "enter [1] to lock or [0] to unlock the north lane" << std::endl;
                 scanf("%hd", &north_sign);
-                std::cout << "enter 1 to lock the east lane or 0 to unlock the east lane" << std::endl;
+                std::cout << "enter [1] to lock or [0] to unlock the east lane" << std::endl;
                 scanf("%hd", &east_sign);
 
                 if ((west_sign != 1 || west_sign != 0) && (north_sign != 1 || north_sign != 0) && (east_sign != 1 || east_sign != 0))

@@ -113,6 +113,9 @@ int32_t main(int32_t argc, char **argv)
       /*registered callback*/
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
 
+	  // Variables to get average stop signs detected of every fifth frame.
+	  float framesCounted = 0;
+      float objectsCounted = 0;
       // Endless loop; end the program by pressing Ctrl-C.
       while (carlos_session.isRunning() || car_session.isRunning())
       {
@@ -139,48 +142,47 @@ int32_t main(int32_t argc, char **argv)
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
+        
+        //==============================
+		// OBJECT DETECTION
+		//==============================
         vector<Rect> stopSigns;
         stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
         size_t nStopSigns = stopSigns.size();
-
-        if (nStopSigns != 0)
-        {
-          for (size_t i = 0; i < nStopSigns; i++)
-          {
-            Point center(stopSigns[i].x + stopSigns[i].width / 2, stopSigns[i].y + stopSigns[i].height / 2);
-            ellipse(resizedImg, center, Size(stopSigns[i].width / 2, stopSigns[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
-          }
-        }
-
-        if (stopSignPresent && nStopSigns == 0)
-        {
-          stopSignPresent = false;
-          stopSignDetected = true;
-        }
-        else if (0 <= nStopSigns)
-        {
-          stopSignPresent = true;
-          stopSignDetected = true;
-        }
-        // If stop sign has been detected and is present, we tell delegator that stop sign is detected.
-        // If stop sign has been detected but is not present, we tell delegator that stop sign is reached.
-        // If stop sign has not been detected and is not present, we don't send anything to delegator.
-        if (stopSignDetected)
-        {
-          if (stopSignPresent)
-          {
-            signStatus.detected(true);
-            signStatus.reached(false);
-          }
-          else
-          {
-            signStatus.detected(false);
-            signStatus.reached(true);
-          }
-          carlos_session.send(signStatus);
-        }
-
+        objectsCounted += (double)nStopSigns;
+		framesCounted++;
+		
+		if (nStopSigns != 0) {
+	      for (size_t i = 0; i < nStopSigns; i++) {
+	        Point center(stopSigns[i].x + stopSigns[i].width / 2, stopSigns[i].y + stopSigns[i].height / 2);
+	        ellipse(resizedImg, center, Size(stopSigns[i].width / 2, stopSigns[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+	      }
+		}
+		
+		if (framesCounted >= 5) {
+			int avgObjects = int((objectsCounted / 5) + 0.5);
+			cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
+			framesCounted = 0;
+			objectsCounted = 0;
+		    
+		    stopSignPresent = (0 < avgObjects) ? true : false;
+	    	if (stopSignPresent) {
+	    		stopSignDetected = true;
+	    	}
+	    	if (stopSignPresent && stopSignDetected) {
+	    		signStatus.detected(true);
+	    		signStatus.reached(false);
+	    	} else if (!stopSignPresent && stopSignDetected) {
+	    		signStatus.detected(false);
+	    		signStatus.reached(true);
+	    	}
+	    	if (stopSignDetected) {
+	    		carlos_session.send(signStatus);
+	    	}
+		}
         cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
+        //==============================
+        
         car_contours = getContours(img_hsv, car_low, car_high);
         stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());

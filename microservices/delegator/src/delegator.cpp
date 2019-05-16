@@ -34,8 +34,6 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--cmd]" << std::endl;
         std::cerr << argv[0] << "[--color]" << std::endl;
         std::cerr << argv[0] << "[--object]" << std::endl;
-        std::cerr << argv[0] << "[--stage]" << std::endl;
-        //std::cerr << argv[0] << "[--freq" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--verbose --object" << std::endl;
         return -1;
@@ -43,7 +41,7 @@ int32_t main(int32_t argc, char **argv)
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
     const bool ACC{commandlineArguments.count("acc") != 0};
-    const bool CMD{commandlineArguments.count("cmd") != 0};
+    // const bool CMD{commandlineArguments.count("cmd") != 0};
     const bool COLOR{commandlineArguments.count("color") != 0};
     const bool OBJECT{commandlineArguments.count("object") != 0};
 
@@ -71,7 +69,7 @@ int32_t main(int32_t argc, char **argv)
         services.object.stage(STAGE);
 
         bool collision_warning = true; //acc service (collision)
-        auto acc_collision = [&carlos_session, &LOCK, &UNLOCK, &services, &collision_warning](cluon::data::Envelope &&envelope) {
+        auto acc_collision = [VERBOSE, ACC, STAGE, &carlos_session, &LOCK, &UNLOCK, &services, &collision_warning](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::collision>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -91,27 +89,29 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(services.acc);
                 carlos_session.send(services.object);
             }
+
+            if (VERBOSE || ACC)
+            {
+                std::cout << "inbox->acc(" + std::to_string(STAGE) + ")[   warning=" + std::to_string(collision_warning) + "]" << std::endl;
+            }
         };
 
         bool front_trigger = false, left_trigger = false; //acc service (triggers)
-        auto acc_trigger = [&front_trigger, &left_trigger](cluon::data::Envelope &&envelope) {
+        auto acc_trigger = [VERBOSE, ACC, STAGE, &front_trigger, &left_trigger](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::trigger>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             front_trigger = msg.front_sensor();
             left_trigger = msg.left_sensor();
-        };
 
-        int16_t path = -1; //cmd service (1 = left, 2 = right, 0 = straight)
-        auto cmd_path = [&path](cluon::data::Envelope &&envelope) {
-            /** unpack message recieved*/
-            auto msg = cluon::extractMessage<carlos::cmd::path>(std::move(envelope));
-            /*store speed and front_sensor value from acc microservice*/
-            path = msg.turn();
+            if (VERBOSE || ACC)
+            {
+                std::cout << "inbox->acc(" + std::to_string(STAGE) + ")[ left trigger=" + std::to_string(left_trigger) + "," + "right trigger=" + std::to_string(front_trigger) + "]" << std::endl;
+            }
         };
 
         bool sign_detected = false, sign_reached = false; //object service
-        auto object_sign = [&STAGE, &carlos_session, &services, &LOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
+        auto object_sign = [VERBOSE, OBJECT, &STAGE, &carlos_session, &services, &LOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::object::sign>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -119,35 +119,43 @@ int32_t main(int32_t argc, char **argv)
             sign_reached = msg.reached();
 
             /*STAGE LOGIC*/
-            if (sign_detected)
+            if (!(sign_detected == false) && !(sign_reached == false))
             {
-                STAGE = 1;
-                services.acc.stage(STAGE);
-                services.cmd.stage(STAGE);
-                services.color.stage(STAGE);
-                services.object.stage(STAGE);
+                if (sign_detected && sign_reached == false)
+                {
+                    STAGE = 1;
+                    services.acc.stage(STAGE);
+                    services.cmd.stage(STAGE);
+                    services.color.stage(STAGE);
+                    services.object.stage(STAGE);
 
-                //send messages
-                carlos_session.send(services.acc);
-                carlos_session.send(services.cmd);
-                carlos_session.send(services.color);
-                carlos_session.send(services.object);
+                    //send messages
+                    carlos_session.send(services.acc);
+                    carlos_session.send(services.cmd);
+                    carlos_session.send(services.color);
+                    carlos_session.send(services.object);
+                }
+                if (sign_reached && sign_detected == false)
+                {
+                    STAGE = 2;
+
+                    services.acc.stage(STAGE);
+                    services.acc.semaphore(LOCK);
+                    services.cmd.stage(STAGE);
+                    services.color.stage(STAGE);
+                    services.object.stage(STAGE);
+
+                    //send messages
+                    carlos_session.send(services.acc);
+                    carlos_session.send(services.cmd);
+                    carlos_session.send(services.color);
+                    carlos_session.send(services.object);
+                }
             }
-            if (sign_reached)
+
+            if (VERBOSE || OBJECT)
             {
-                STAGE = 2;
-
-                services.acc.stage(STAGE);
-                services.acc.semaphore(LOCK);
-                services.cmd.stage(STAGE);
-                services.color.stage(STAGE);
-                services.object.stage(STAGE);
-
-                //send messages
-                carlos_session.send(services.acc);
-                carlos_session.send(services.cmd);
-                carlos_session.send(services.color);
-                carlos_session.send(services.object);
+                std::cout << "inbox->object(" + std::to_string(STAGE) + ")[   detected=" + std::to_string(sign_detected) + ",   reached=" + std::to_string(sign_reached) + "]" << std::endl;
             }
         };
 
@@ -161,7 +169,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         bool north = false, east = false, west = false; //color service
-        auto color_intersection = [&STAGE, &carlos_session, &services, &UNLOCK, &north, &east, &west](cluon::data::Envelope &&envelope) {
+        auto color_intersection = [VERBOSE, COLOR, &STAGE, &carlos_session, &services, &UNLOCK, &north, &east, &west](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::intersection>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -169,7 +177,7 @@ int32_t main(int32_t argc, char **argv)
             east = msg.east();
             west = msg.west();
 
-            if (!(north && east && west))
+            if ((north == false && east == false && west == false) && STAGE == 2)
             {
                 /*if north, east and west flags are false*/
                 STAGE = 3;
@@ -185,24 +193,19 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(services.color);
                 carlos_session.send(services.object);
             }
+
+            if (VERBOSE || COLOR)
+            {
+                std::cout << "inbox->color(" + std::to_string(STAGE) + ")[   west=" + std::to_string(west) + ",   north=" + std::to_string(north) + ",   east=" + std::to_string(east) + "]" << std::endl;
+            }
         };
 
         /*registers callbacks*/
         carlos_session.dataTrigger(carlos::acc::collision::ID(), acc_collision);
         carlos_session.dataTrigger(carlos::acc::trigger::ID(), acc_trigger);
-        carlos_session.dataTrigger(carlos::cmd::path::ID(), cmd_path);
         carlos_session.dataTrigger(carlos::object::sign::ID(), object_sign);
         carlos_session.dataTrigger(carlos::color::lead_car::ID(), color_lead_car);
         carlos_session.dataTrigger(carlos::color::intersection::ID(), color_intersection);
-
-        /*data*/
-        std::string stage_data = "stage->[" + std::to_string(STAGE) + "]";
-        std::string acc_collision_data = "acc_collision->[" + std::to_string(collision_warning) + "]";
-        std::string sign_data = "sign->[detected= " + std::to_string(sign_detected) + ",reached= " + std::to_string(sign_reached) + "]";
-        std::string intersection_data = "intersection->[west=" + std::to_string(west) + ", north=" + std::to_string(north) + ", east=" + std::to_string(east) + "]";
-        std::string cmd_data = "cmd->[" + std::to_string(path) + "]";
-        std::string res = stage_data;
-        //string acc_trigger_data = "acc_trigger->[front=" + front_trigger + ",left" + left_trigger + "]";
 
         while (carlos_session.isRunning())
         {
@@ -212,27 +215,6 @@ int32_t main(int32_t argc, char **argv)
             carlos_session.send(services.cmd);
             carlos_session.send(services.color);
             carlos_session.send(services.object);
-
-            if (VERBOSE)
-            {
-                if (VERBOSE || ACC)
-                {
-                    res = res + "," + acc_collision_data;
-                }
-                if (VERBOSE || OBJECT)
-                {
-                    res = res + "," + sign_data;
-                }
-                if (VERBOSE || COLOR)
-                {
-                    res = res + "," + intersection_data;
-                }
-                if (CMD)
-                {
-                    res = res + "," + cmd_data;
-                }
-                std::cout << res << std::endl;
-            }
         }
     }
     else

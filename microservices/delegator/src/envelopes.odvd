@@ -4,6 +4,11 @@
  * and should be distributed at YOUR OWN RISK.
 */
 
+message carlos.status [id = 3000]{
+  bool semaphore [id = 1];
+  uint16 stage [id = 2];
+}
+
 message carlos.acc.status [id = 3100]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];
@@ -24,9 +29,9 @@ message carlos.cmd.status [id = 3200]{
 }
 
 message carlos.cmd.turn_status [id = 3201]{
+  bool east_turn [id=1];
   bool west_turn [id=2];
   bool north_turn [id=3];
-  bool east_turn [id=4];
 }
 
 message carlos.object.status [id = 3300]{

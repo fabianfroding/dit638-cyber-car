@@ -23,7 +23,7 @@ double getAreaOfContour(vector<Point> contour);
 double getPerimeterOfContour(vector<Point> contour);
 void drawRectangle(Rect rectangle, Mat image, Scalar color);
 float getPercentageOfWidth(vector<Point> contour, Mat image);
-void printRectangleLocation(vector<Point> contour, Mat image, String object);
+void printRectangleLocation(vector<Point> contour, Mat image);
 vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_high);
 
 int32_t main(int32_t argc, char **argv)
@@ -35,8 +35,7 @@ int32_t main(int32_t argc, char **argv)
 
   //**VARIABLES**//
   int32_t retCode{1};
-  uint16_t status=0;
-  bool stopSignPresent=false, stopSignDetected=false;
+  bool stopSignPresent=false, stopSignDetected=false, westCar=false, northCar=true, eastCar=false;
   String car_cascade_name;
   CascadeClassifier car_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
@@ -44,16 +43,11 @@ int32_t main(int32_t argc, char **argv)
   vector<Vec4i> car_hierarchy, stop_hierarchy;
   Rect temp, empty;
   Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2,resizedImg2;
-  Mat stop_frame_threshold, stop_detected_edges;
   Scalar edge = Scalar(255, 255, 255);
-  Scalar redEdge = Scalar(0, 0, 255);
-  //stop sign colors
-  //  double area=0, perimeter=0;
-  double stop_low_H = 151, stop_high_H = 172, stop_low_S = 61, stop_high_S = 255, stop_low_V = 52, stop_high_V = 255; //,sensitivity=0;
+
   //car sticker colors
-  double car_low_H = 40, car_high_H = 94, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
+  double car_low_H = 40, car_high_H = 90, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
-  Scalar stop_low = Scalar(stop_low_H, stop_low_S, stop_low_V), stop_high = Scalar(stop_high_H, stop_high_S, stop_high_V);
   //**END VARIABLES**//
 
   car_cascade_name = parser.get<String>("car_cascade");
@@ -97,6 +91,7 @@ int32_t main(int32_t argc, char **argv)
       opendlv::proxy::GroundSteeringRequest wheel;
       carlos::color::lead_car lead_car;
       carlos::color::intersection intersection_tracker;
+      carlos::color::status status;
       carlos::object::sign signStatus;
       // carlos::vision::sign sign_tracker;
 
@@ -108,7 +103,6 @@ int32_t main(int32_t argc, char **argv)
         auto msg = cluon::extractMessage<carlos::color::status>(std::move(envelope));
         /*store data*/
         SEMAPHORE = msg.semaphore();
-        status= msg.stage();
       };
       /*registered callback*/
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
@@ -118,7 +112,6 @@ int32_t main(int32_t argc, char **argv)
       {
         // Wait for a notification of a new frame.
         sharedMemory->wait();
-
         // Lock the shared memory.
         sharedMemory->lock();
         {
@@ -135,12 +128,13 @@ int32_t main(int32_t argc, char **argv)
 
         resize(img, resizedImg, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
         resize(img2, resizedImg2, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img2.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
+        //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
         vector<Rect> cars;
         car_cascade.detectMultiScale(obj_frame, cars);
-
+        //make an ellipse around the detected stop signs
         if(cars.size()!=0){
           for (size_t i = 0; i < cars.size(); i++) {
               Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
@@ -159,59 +153,36 @@ int32_t main(int32_t argc, char **argv)
         signStatus.reached(stopSignDetected);
         carlos_session.send(signStatus);
 
-        cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
+        //cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
         car_contours = getContours(img_hsv, car_low, car_high);
-        stop_contours = getContours(img_hsv, stop_low, stop_high);
         car_polygons.resize(car_contours.size());
         car_rectangle.resize(car_contours.size());
-        stop_polygons.resize(stop_contours.size());
-        stop_rectangle.resize(stop_contours.size());
-
-        //**PROCESS STOP SIGNAL DETECTION**
-        /*  if(stop_contours.size()>0)
-          for (size_t k = 0; k < stop_contours.size(); k++)
-          {
-            approxPolyDP(stop_contours[k], stop_polygons[k], 3, true);
-            if (arcLength(stop_contours[k], true) > 100)
-            {
-              stop_rectangle[k] = boundingRect(stop_polygons[k]);
-              //printRectangleLocation(stop_contours[k], img, "stop"); //coordinates and position of the center of each rectangle
-            }
-            groupRectangles(stop_rectangle, 1, 0.8); //group overlapping rectangles
-            //cout<<"There are currently "<<stop_rectangle.size()<<" rectangles"<<endl<<flush;
-            drawRectangle(stop_rectangle[k], resizedImg, redEdge);
-
-            sign_tracker.type(1);
-            sign_tracker.area(boundingRect(stop_polygons[k]).area());
-            sign_tracker.cos(carlos_converter(getPercentageOfWidth(stop_contours[k],resizedImg)));
-            vision_color.send(sign_tracker);
-          }*/
 
         //**PROCESS CAR GREEN DETECTION**
-        if (car_contours.size() > 0)
+        eastCar=false; northCar=false; westCar=false;
           for (size_t k = 0; k < car_contours.size(); k++)
           {
             approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
             if (arcLength(car_contours[k], false) > 120)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
-              printRectangleLocation(car_contours[k], resizedImg, "car"); //coordinates and position of the center of each rectangle
-              //numberOfCars++;
+              //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
+              if(getCenterOfContour(car_contours[k]).x < resizedImg.size().width/100*30) westCar=true;
+              //else westCar=false;
+              if(getCenterOfContour(car_contours[k]).x >= resizedImg.size().width/100*30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width/100*65) northCar=true;
+              //else northCar=false;
+              if(getCenterOfContour(car_contours[k]).x > resizedImg.size().width/100*65) eastCar=true;
+              //else eastCar=false;
             }
-            groupRectangles(car_rectangle, 1, 0.6); //group overlapping rectangles
+            groupRectangles(car_rectangle, 3, 0.7); //group overlapping rectangles
             drawRectangle(car_rectangle[k], resizedImg, edge);
-
-            //create the envelope containing this data
-            wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
-            if (SEMAPHORE)
-            {
-              kiwi_session.send(wheel); //send to car
-            }
-            lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
-            lead_car.area(car_rectangle[k].area());                          //area                            //number of cars queued
-
-            carlos_session.send(lead_car); //send the message to the delegator
           }
+            cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
+            //send intersection message
+            intersection_tracker.west(westCar);
+            intersection_tracker.north(northCar);
+            intersection_tracker.east(eastCar);
+            carlos_session.send(intersection_tracker);
 
         //message sending stopped
         // Display image.
@@ -273,39 +244,23 @@ float getPercentageOfWidth(vector<Point> contour, Mat image)
 }
 
 //print the location of a detected color according to its name
-void printRectangleLocation(vector<Point> contour, Mat image, String object)
+void printRectangleLocation(vector<Point> contour, Mat image)
 {
-  double area = contourArea(contour);
   float x, y, percentage = 0;
   Point centerOfObject;
   x = getCenterOfContour(contour).x;
   y = getCenterOfContour(contour).y;
   centerOfObject = minAreaRect(contour).center;      //center of the rectangle <Point>
   percentage = getPercentageOfWidth(contour, image); //percentage till the end of the frame
-  if (object == "stop")
-  {
-    if (x <= (image.size().width) / 3) //center is on the left
-      cout << "Detected STOP SIGN - LEFT |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << " - Area= " << area << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
-    else if (x >= (image.size().width) / 3 * 2) //center on the right
-      cout << "Detected STOP SIGN - RIGHT |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << " - Area= " << area << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
-    else //center in the middle
-      cout << "Detected STOP SIGN - CENTER |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << " - Area= " << area << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
-  }
-  else if (object == "car")
-  {
-    if (x <= (image.size().width) / 3) //center is on the left
-      cout << "Detected CAR - LEFT |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
-    else if (x >= (image.size().width) / 3 * 2) //center on the right
-      cout << "Detected CAR - RIGHT |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
-    else //center in the middle
-      cout << "Detected CAR - CENTER |" << x << "," << y << "|"
-           << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
-  }
+  if (x <= (image.size().width) / 100*30) //center is on the left
+    cout << "Detected CAR - LEFT |" << x << "," << y << "|"
+         << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
+  else if (x >= (image.size().width) /100*63) //center on the right
+    cout << "Detected CAR - RIGHT |" << x << "," << y << "|"
+         << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
+  else //center in the middle
+    cout << "Detected CAR - CENTER |" << x << "," << y << "|"
+         << " %" << static_cast<int>(percentage * 100) << " - Area= " << getAreaOfContour(contour) << " - Perimeter= " << getPerimeterOfContour(contour) << flush << endl;
 }
 
 //get contours of a detected range of colors in hsv image

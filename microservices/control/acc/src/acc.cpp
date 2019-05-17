@@ -65,9 +65,9 @@ int32_t main(int32_t argc, char **argv)
         };
 
         opendlv::proxy::PedalPositionRequest pedal; //kiwi
-        int16_t count = 0;
-        float sensor_values[3] = {0, 0, 0};
-        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, SEMAPHORE, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal, &count, &sensor_values, &kiwi_session](cluon::data::Envelope &&envelope) {
+        int16_t count = 0, max_sensor_values = 5;
+        float sensor_values[max_sensor_values] = {0, 0, 0, 0, 0};
+        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, SEMAPHORE, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal, &count, &sensor_values, &max_sensor_values, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -82,10 +82,10 @@ int32_t main(int32_t argc, char **argv)
             {
                 if (STAGE != 2)
                 {
-                    if (count == 2)
+                    if (count == 4)
                     {
-                        int16_t sensor_average = (sensor_values[0] + sensor_values[1] + sensor_values[2]) / 3;
                         count = 0;
+                        int16_t sensor_average = (sensor_values[0] + sensor_values[1] + sensor_values[2] + sensor_values[3] + sensor_values[4]) / max_sensor_values;
                         if (sensor_average < SAFE_DISTANCE)
                         {
                             SPEED = 0;
@@ -93,7 +93,7 @@ int32_t main(int32_t argc, char **argv)
 
                             if (VERBOSE)
                             {
-                                std::cout << "STAGE(" + std::to_string(STAGE) + ")[" + std::to_string(SEMAPHORE) + "]:Object Detected at [" << sensor_average << "]" << std::endl;
+                                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Object Detected at [" << sensor_average << "]" << std::endl;
                             }
                         }
                         else
@@ -103,7 +103,7 @@ int32_t main(int32_t argc, char **argv)
 
                             if (VERBOSE)
                             {
-                                std::cout << "STAGE(" + std::to_string(STAGE) + ")[" + std::to_string(SEMAPHORE) + "]:Sent move instructions at speed [" << SPEED << "]" << std::endl;
+                                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Sent move instructions at speed [" << SPEED << "]" << std::endl;
                             }
                         }
                         if (SEMAPHORE && (SPEED != PREV_SPEED))

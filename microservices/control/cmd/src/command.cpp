@@ -224,7 +224,7 @@ int32_t main(int32_t argc, char **argv)
             }
             else
             {
-                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" std::to_string(SEMAPHORE) ")[dissengaged]" << std::endl;
+                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + ")[dissengaged]" << std::endl;
             }
         }
     }

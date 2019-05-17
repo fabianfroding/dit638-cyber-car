@@ -101,11 +101,17 @@ int32_t main(int32_t argc, char **argv)
                     std::cout << "carlos turning left" << std::endl;
                     //turn wheel
                     wheel.groundSteering(0.14);
-                    car_session.send(wheel);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(wheel);
+                    }
 
                     //speed
                     pedal.position(0.13);
-                    car_session.send(pedal);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(pedal);
+                    }
 
                     //delay
                     std::chrono::milliseconds timer(3); // or whatever
@@ -113,11 +119,17 @@ int32_t main(int32_t argc, char **argv)
 
                     //stop vehicle
                     pedal.position(0);
-                    car_session.send(pedal);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(pedal);
+                    }
 
                     //straighten wheel
                     wheel.groundSteering(0);
-                    car_session.send(wheel);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(wheel);
+                    }
                 }
                 break;
             case 12:
@@ -126,11 +138,17 @@ int32_t main(int32_t argc, char **argv)
                     std::cout << "carlos turning right" << std::endl;
                     //turn wheel
                     wheel.groundSteering(0);
-                    car_session.send(wheel);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(wheel);
+                    }
 
                     //speed
                     pedal.position(0.12);
-                    car_session.send(pedal);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(pedal);
+                    }
 
                     //delay
                     std::chrono::milliseconds timer(3); // or whatever
@@ -138,11 +156,17 @@ int32_t main(int32_t argc, char **argv)
 
                     //stop vehicle
                     pedal.position(0);
-                    car_session.send(pedal);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(pedal);
+                    }
 
                     //straighten wheel
                     wheel.groundSteering(0);
-                    car_session.send(wheel);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(wheel);
+                    }
                 }
                 break;
 
@@ -152,11 +176,17 @@ int32_t main(int32_t argc, char **argv)
                     std::cout << "carlos turning right" << std::endl;
                     //turn wheel
                     wheel.groundSteering(-0.25);
-                    car_session.send(wheel);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(wheel);
+                    }
 
                     //speed
                     pedal.position(0.13);
-                    car_session.send(pedal);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(pedal);
+                    }
 
                     //delay
                     std::chrono::milliseconds timer(3); // or whatever
@@ -164,11 +194,17 @@ int32_t main(int32_t argc, char **argv)
 
                     //stop vehicle
                     pedal.position(0);
-                    car_session.send(pedal);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(pedal);
+                    }
 
                     //straighten wheel
                     wheel.groundSteering(0);
-                    car_session.send(wheel);
+                    if (SEMAPHORE)
+                    {
+                        car_session.send(wheel);
+                    }
                 }
                 break;
             case default:

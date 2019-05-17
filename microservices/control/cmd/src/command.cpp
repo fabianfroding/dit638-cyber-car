@@ -3,7 +3,6 @@
 */
 
 #include <cstdint>
-#include <chrono>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -29,10 +28,14 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << "example:  " << argv[0] << "--cid=112 --carlos=113 --verbose" << std::endl;
         return -1;
     }
-    const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
-    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(1)};
+    const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
+    const uint16_t KIWI_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
-
+    const float TURN{(commandlineArguments.count("turn") != 0) ? static_cast<float>(std::stof(commandlineArguments["turn"])) : static_cast<float>(0.25)};
+    const float SPEED{(commandlineArguments.count("speed") != 0) ? static_cast<float>(std::stof(commandlineArguments["speed"])) : static_cast<float>(0.15)};
+    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(2)};
+    cluon::OD4Session carlos_session{CARLOS_SESSION};
+    cluon::OD4Session kiwi_session{KIWI_SESSION};
     uint16_t dir = 12;
 
     if (VERBOSE)
@@ -77,11 +80,31 @@ int32_t main(int32_t argc, char **argv)
 
             if (STAGE == 3)
             {
-                std::cout << "[STAGE 3 Engaged]: Direction (9, 12, 3):" << std::endl;
+                std::cout << "[STAGE 3 Engaged]: Direction (9, 12, 3, 0):" << std::endl;
                 scanf("%hd", &dir);
 
                 switch (dir)
                 {
+
+                case 0:
+                    std::cout << "manual control" << std::endl;
+                    //turn wheel
+                    wheel.groundSteering(TURN);
+                    kiwi_session.send(wheel);
+                    //speed
+                    pedal.position(SPEED);
+                    kiwi_session.send(pedal);
+                    //delay
+                    sleep(DELAY);
+                    //stop vehicle
+                    pedal.position(0);
+                    kiwi_session.send(pedal);
+                    //straighten wheel
+                    wheel.groundSteering(0);
+                    kiwi_session.send(wheel);
+                        
+                break;
+
                 case 9:
                     if (turn_west)
                     {
@@ -94,15 +117,14 @@ int32_t main(int32_t argc, char **argv)
                         }
 
                         //speed
-                        pedal.position(0.13);
+                        pedal.position(0.15);
                         if (SEMAPHORE)
                         {
                             kiwi_session.send(pedal);
                         }
 
                         //delay
-                        std::chrono::milliseconds timer(3); // or whatever
-                        std::this_thread::sleep_for(timer);
+                        sleep(3);
 
                         //stop vehicle
                         pedal.position(0);
@@ -135,15 +157,14 @@ int32_t main(int32_t argc, char **argv)
                         }
 
                         //speed
-                        pedal.position(0.12);
+                        pedal.position(0.15);
                         if (SEMAPHORE)
                         {
                             kiwi_session.send(pedal);
                         }
 
                         //delay
-                        std::chrono::milliseconds timer(3); // or whatever
-                        std::this_thread::sleep_for(timer);
+                        sleep(3);
 
                         //stop vehicle
                         pedal.position(0);
@@ -177,15 +198,14 @@ int32_t main(int32_t argc, char **argv)
                         }
 
                         //speed
-                        pedal.position(0.13);
+                        pedal.position(0.15);
                         if (SEMAPHORE)
                         {
                             kiwi_session.send(pedal);
                         }
 
                         //delay
-                        std::chrono::milliseconds timer(3); // or whatever
-                        std::this_thread::sleep_for(timer);
+                        sleep(3);
 
                         //stop vehicle
                         pedal.position(0);

@@ -76,7 +76,7 @@ int32_t main(int32_t argc, char **argv)
 
         while (kiwi_session.isRunning())
         {
-            std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
+            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
 
             if (STAGE == 3)
             {
@@ -164,7 +164,12 @@ int32_t main(int32_t argc, char **argv)
                         }
 
                         //delay
+<<<<<<< HEAD
                         sleep(3);
+=======
+                        std::chrono::milliseconds timer(3);
+                        std::this_thread::sleep_for(timer);
+>>>>>>> 1df09d8c917d45fea8c0ffb9d83fba250aebaeba
 
                         //stop vehicle
                         pedal.position(0);
@@ -230,6 +235,7 @@ int32_t main(int32_t argc, char **argv)
             }
             else
             {
+                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + ")[dissengaged]" << std::endl;
             }
         }
     }

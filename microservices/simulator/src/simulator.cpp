@@ -21,12 +21,14 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << " is a simulator that tests tests how microservices react to events." << std::endl;
         std::cerr << "Usage:" << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
         std::cerr << argv[0] << "[--verbose]" << std::endl;
+        std::cerr << argv[0] << "[--sign] test sign" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--carlos=113 --verbose" << std::endl;
         return -1;
     }
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(2000)};
+    const bool SIGN{commandlineArguments.count("sign") != 0};
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
 
@@ -82,50 +84,53 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(sign_tracker);
                 std::this_thread::sleep_for(timer);
 
-                // int16_t west_sign = -1, north_sign = -1, east_sign = -1;
-                // std::cout << "Choose whether the lanes are accesible or not" << std::endl;
-                // std::cout << "enter [1] to lock or [0] to unlock the west lane" << std::endl;
-                // scanf("%hd", &west_sign);
-                // std::cout << "enter [1] to lock or [0] to unlock the north lane" << std::endl;
-                // scanf("%hd", &north_sign);
-                // std::cout << "enter [1] to lock or [0] to unlock the east lane" << std::endl;
-                // scanf("%hd", &east_sign);
+                if (SIGN)
+                {
+                    int16_t west_sign = -1, north_sign = -1, east_sign = -1;
+                    std::cout << "Choose whether the lanes are accesible or not" << std::endl;
+                    std::cout << "enter [1] to lock or [0] to unlock the west lane" << std::endl;
+                    scanf("%hd", &west_sign);
+                    std::cout << "enter [1] to lock or [0] to unlock the north lane" << std::endl;
+                    scanf("%hd", &north_sign);
+                    std::cout << "enter [1] to lock or [0] to unlock the east lane" << std::endl;
+                    scanf("%hd", &east_sign);
 
-                // if ((west_sign != 1 || west_sign != 0) && (north_sign != 1 || north_sign != 0) && (east_sign != 1 || east_sign != 0))
-                // {
-                //     //wrong values
-                //     return 1;
-                // }
+                    if ((west_sign != 1 || west_sign != 0) && (north_sign != 1 || north_sign != 0) && (east_sign != 1 || east_sign != 0))
+                    {
+                        //wrong values
+                        return 1;
+                    }
 
-                // if (west_sign == 1)
-                // {
-                //     sign_tracker.turn_west(false);
-                // }
-                // else
-                // {
-                //     sign_tracker.turn_west(true);
-                // }
+                    if (west_sign == 1)
+                    {
+                        sign_tracker.turn_west(false);
+                    }
+                    else
+                    {
+                        sign_tracker.turn_west(true);
+                    }
 
-                // if (north_sign == 1)
-                // {
-                //     sign_tracker.turn_north(false);
-                // }
-                // else
-                // {
-                //     sign_tracker.turn_north(true);
-                // }
+                    if (north_sign == 1)
+                    {
+                        sign_tracker.turn_north(false);
+                    }
+                    else
+                    {
+                        sign_tracker.turn_north(true);
+                    }
 
-                // if (east_sign == 1)
-                // {
-                //     sign_tracker.turn_east(false);
-                // }
-                // else
-                // {
-                //     sign_tracker.turn_west(true);
-                // }
+                    if (east_sign == 1)
+                    {
+                        sign_tracker.turn_east(false);
+                    }
+                    else
+                    {
+                        sign_tracker.turn_west(true);
+                    }
 
-                // carlos_session.send(sign_tracker);
-                // std::this_thread::sleep_for(timer);
+                    carlos_session.send(sign_tracker);
+                    std::this_thread::sleep_for(timer);
+                }
             }
             if (userInp == 2)
             { /** stage 2

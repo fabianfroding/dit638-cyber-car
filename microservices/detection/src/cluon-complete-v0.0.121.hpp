@@ -3823,7 +3823,7 @@ namespace argh
 
       std::stringbuf* rdbuf() const { return stream_.rdbuf(); }
 
-      // Check the state of the stream. 
+      // Check the state of the stream.
       // False when the most recent stream operation failed
       operator bool() const { return !!stream_; }
 
@@ -3968,8 +3968,8 @@ namespace argh
             argh::parser::SINGLE_DASH_IS_MULTIFLAG & mode && // multi-flag mode
             !is_param(name))                                  // unregistered
          {
-            std::string keep_param; 
-            
+            std::string keep_param;
+
             if (!name.empty() && is_param(std::string(1ul, name.back()))) // last char is param
             {
                keep_param += name.back();
@@ -4001,7 +4001,7 @@ namespace argh
 
          // if 'name' is a pre-registered option, then the next arg cannot be a free parameter to it is skipped
          // otherwise we have 2 modes:
-         // PREFER_FLAG_FOR_UNREG_OPTION: a non-registered 'name' is determined a flag. 
+         // PREFER_FLAG_FOR_UNREG_OPTION: a non-registered 'name' is determined a flag.
          //                               The following value (the next arg) will be a free parameter.
          //
          // PREFER_PARAM_FOR_UNREG_OPTION: a non-registered 'name' is determined a parameter, the next arg
@@ -4148,7 +4148,7 @@ namespace argh
          auto optIt = params_.find(trim_leading_dashes(name));
          if (params_.end() != optIt)
             return string_stream(optIt->second);
-      }      
+      }
       std::ostringstream ostr;
       ostr << def_val;
       return string_stream(ostr.str()); // use default
@@ -4324,7 +4324,7 @@ class LIB_API TimeStamp {
         ~TimeStamp() = default;
 
     public:
-        
+
         inline TimeStamp& seconds(const int32_t &v) noexcept {
             m_seconds = v;
             return *this;
@@ -4332,7 +4332,7 @@ class LIB_API TimeStamp {
         inline int32_t seconds() const noexcept {
             return m_seconds;
         }
-        
+
         inline TimeStamp& microseconds(const int32_t &v) noexcept {
             m_microseconds = v;
             return *this;
@@ -4340,7 +4340,7 @@ class LIB_API TimeStamp {
         inline int32_t microseconds() const noexcept {
             return m_microseconds;
         }
-        
+
 
     public:
         template<class Visitor>
@@ -4348,28 +4348,28 @@ class LIB_API TimeStamp {
             (void)fieldId;
             (void)visitor;
 //            visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             if (1 == fieldId) {
                 doVisit(1, std::move("int32_t"s), std::move("seconds"s), m_seconds, visitor);
                 return;
             }
-            
+
             if (2 == fieldId) {
                 doVisit(2, std::move("int32_t"s), std::move("microseconds"s), m_microseconds, visitor);
                 return;
             }
-            
+
 //            visitor.postVisit();
         }
 
         template<class Visitor>
         inline void accept(Visitor &visitor) {
             visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             doVisit(1, std::move("int32_t"s), std::move("seconds"s), m_seconds, visitor);
-            
+
             doVisit(2, std::move("int32_t"s), std::move("microseconds"s), m_microseconds, visitor);
-            
+
             visitor.postVisit();
         }
 
@@ -4377,20 +4377,20 @@ class LIB_API TimeStamp {
         inline void accept(PreVisitor &&preVisit, Visitor &&visit, PostVisitor &&postVisit) {
             (void)visit; // Prevent warnings from empty messages.
             std::forward<PreVisitor>(preVisit)(ID(), ShortName(), LongName());
-            
+
             doTripletForwardVisit(1, std::move("int32_t"s), std::move("seconds"s), m_seconds, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(2, std::move("int32_t"s), std::move("microseconds"s), m_microseconds, preVisit, visit, postVisit);
-            
+
             std::forward<PostVisitor>(postVisit)();
         }
 
     private:
-        
+
         int32_t m_seconds{ 0 }; // field identifier = 1.
-        
+
         int32_t m_microseconds{ 0 }; // field identifier = 2.
-        
+
 };
 }}
 
@@ -4531,7 +4531,7 @@ class LIB_API Envelope {
         ~Envelope() = default;
 
     public:
-        
+
         inline Envelope& dataType(const int32_t &v) noexcept {
             m_dataType = v;
             return *this;
@@ -4539,7 +4539,7 @@ class LIB_API Envelope {
         inline int32_t dataType() const noexcept {
             return m_dataType;
         }
-        
+
         inline Envelope& serializedData(const std::string &v) noexcept {
             m_serializedData = v;
             return *this;
@@ -4547,7 +4547,7 @@ class LIB_API Envelope {
         inline std::string serializedData() const noexcept {
             return m_serializedData;
         }
-        
+
         inline Envelope& sent(const cluon::data::TimeStamp &v) noexcept {
             m_sent = v;
             return *this;
@@ -4555,7 +4555,7 @@ class LIB_API Envelope {
         inline cluon::data::TimeStamp sent() const noexcept {
             return m_sent;
         }
-        
+
         inline Envelope& received(const cluon::data::TimeStamp &v) noexcept {
             m_received = v;
             return *this;
@@ -4563,7 +4563,7 @@ class LIB_API Envelope {
         inline cluon::data::TimeStamp received() const noexcept {
             return m_received;
         }
-        
+
         inline Envelope& sampleTimeStamp(const cluon::data::TimeStamp &v) noexcept {
             m_sampleTimeStamp = v;
             return *this;
@@ -4571,7 +4571,7 @@ class LIB_API Envelope {
         inline cluon::data::TimeStamp sampleTimeStamp() const noexcept {
             return m_sampleTimeStamp;
         }
-        
+
         inline Envelope& senderStamp(const uint32_t &v) noexcept {
             m_senderStamp = v;
             return *this;
@@ -4579,7 +4579,7 @@ class LIB_API Envelope {
         inline uint32_t senderStamp() const noexcept {
             return m_senderStamp;
         }
-        
+
 
     public:
         template<class Visitor>
@@ -4587,56 +4587,56 @@ class LIB_API Envelope {
             (void)fieldId;
             (void)visitor;
 //            visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             if (1 == fieldId) {
                 doVisit(1, std::move("int32_t"s), std::move("dataType"s), m_dataType, visitor);
                 return;
             }
-            
+
             if (2 == fieldId) {
                 doVisit(2, std::move("std::string"s), std::move("serializedData"s), m_serializedData, visitor);
                 return;
             }
-            
+
             if (3 == fieldId) {
                 doVisit(3, std::move("cluon::data::TimeStamp"s), std::move("sent"s), m_sent, visitor);
                 return;
             }
-            
+
             if (4 == fieldId) {
                 doVisit(4, std::move("cluon::data::TimeStamp"s), std::move("received"s), m_received, visitor);
                 return;
             }
-            
+
             if (5 == fieldId) {
                 doVisit(5, std::move("cluon::data::TimeStamp"s), std::move("sampleTimeStamp"s), m_sampleTimeStamp, visitor);
                 return;
             }
-            
+
             if (6 == fieldId) {
                 doVisit(6, std::move("uint32_t"s), std::move("senderStamp"s), m_senderStamp, visitor);
                 return;
             }
-            
+
 //            visitor.postVisit();
         }
 
         template<class Visitor>
         inline void accept(Visitor &visitor) {
             visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             doVisit(1, std::move("int32_t"s), std::move("dataType"s), m_dataType, visitor);
-            
+
             doVisit(2, std::move("std::string"s), std::move("serializedData"s), m_serializedData, visitor);
-            
+
             doVisit(3, std::move("cluon::data::TimeStamp"s), std::move("sent"s), m_sent, visitor);
-            
+
             doVisit(4, std::move("cluon::data::TimeStamp"s), std::move("received"s), m_received, visitor);
-            
+
             doVisit(5, std::move("cluon::data::TimeStamp"s), std::move("sampleTimeStamp"s), m_sampleTimeStamp, visitor);
-            
+
             doVisit(6, std::move("uint32_t"s), std::move("senderStamp"s), m_senderStamp, visitor);
-            
+
             visitor.postVisit();
         }
 
@@ -4644,36 +4644,36 @@ class LIB_API Envelope {
         inline void accept(PreVisitor &&preVisit, Visitor &&visit, PostVisitor &&postVisit) {
             (void)visit; // Prevent warnings from empty messages.
             std::forward<PreVisitor>(preVisit)(ID(), ShortName(), LongName());
-            
+
             doTripletForwardVisit(1, std::move("int32_t"s), std::move("dataType"s), m_dataType, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(2, std::move("std::string"s), std::move("serializedData"s), m_serializedData, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(3, std::move("cluon::data::TimeStamp"s), std::move("sent"s), m_sent, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(4, std::move("cluon::data::TimeStamp"s), std::move("received"s), m_received, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(5, std::move("cluon::data::TimeStamp"s), std::move("sampleTimeStamp"s), m_sampleTimeStamp, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(6, std::move("uint32_t"s), std::move("senderStamp"s), m_senderStamp, preVisit, visit, postVisit);
-            
+
             std::forward<PostVisitor>(postVisit)();
         }
 
     private:
-        
+
         int32_t m_dataType{ 0 }; // field identifier = 1.
-        
+
         std::string m_serializedData{ ""s }; // field identifier = 2.
-        
+
         cluon::data::TimeStamp m_sent{  }; // field identifier = 3.
-        
+
         cluon::data::TimeStamp m_received{  }; // field identifier = 4.
-        
+
         cluon::data::TimeStamp m_sampleTimeStamp{  }; // field identifier = 5.
-        
+
         uint32_t m_senderStamp{ 0 }; // field identifier = 6.
-        
+
 };
 }}
 
@@ -4814,7 +4814,7 @@ class LIB_API PlayerCommand {
         ~PlayerCommand() = default;
 
     public:
-        
+
         inline PlayerCommand& command(const uint8_t &v) noexcept {
             m_command = v;
             return *this;
@@ -4822,7 +4822,7 @@ class LIB_API PlayerCommand {
         inline uint8_t command() const noexcept {
             return m_command;
         }
-        
+
         inline PlayerCommand& seekTo(const float &v) noexcept {
             m_seekTo = v;
             return *this;
@@ -4830,7 +4830,7 @@ class LIB_API PlayerCommand {
         inline float seekTo() const noexcept {
             return m_seekTo;
         }
-        
+
 
     public:
         template<class Visitor>
@@ -4838,28 +4838,28 @@ class LIB_API PlayerCommand {
             (void)fieldId;
             (void)visitor;
 //            visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             if (1 == fieldId) {
                 doVisit(1, std::move("uint8_t"s), std::move("command"s), m_command, visitor);
                 return;
             }
-            
+
             if (2 == fieldId) {
                 doVisit(2, std::move("float"s), std::move("seekTo"s), m_seekTo, visitor);
                 return;
             }
-            
+
 //            visitor.postVisit();
         }
 
         template<class Visitor>
         inline void accept(Visitor &visitor) {
             visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             doVisit(1, std::move("uint8_t"s), std::move("command"s), m_command, visitor);
-            
+
             doVisit(2, std::move("float"s), std::move("seekTo"s), m_seekTo, visitor);
-            
+
             visitor.postVisit();
         }
 
@@ -4867,20 +4867,20 @@ class LIB_API PlayerCommand {
         inline void accept(PreVisitor &&preVisit, Visitor &&visit, PostVisitor &&postVisit) {
             (void)visit; // Prevent warnings from empty messages.
             std::forward<PreVisitor>(preVisit)(ID(), ShortName(), LongName());
-            
+
             doTripletForwardVisit(1, std::move("uint8_t"s), std::move("command"s), m_command, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(2, std::move("float"s), std::move("seekTo"s), m_seekTo, preVisit, visit, postVisit);
-            
+
             std::forward<PostVisitor>(postVisit)();
         }
 
     private:
-        
+
         uint8_t m_command{ 0 }; // field identifier = 1.
-        
+
         float m_seekTo{ 0.0f }; // field identifier = 2.
-        
+
 };
 }}
 
@@ -5021,7 +5021,7 @@ class LIB_API PlayerStatus {
         ~PlayerStatus() = default;
 
     public:
-        
+
         inline PlayerStatus& state(const uint8_t &v) noexcept {
             m_state = v;
             return *this;
@@ -5029,7 +5029,7 @@ class LIB_API PlayerStatus {
         inline uint8_t state() const noexcept {
             return m_state;
         }
-        
+
         inline PlayerStatus& numberOfEntries(const uint32_t &v) noexcept {
             m_numberOfEntries = v;
             return *this;
@@ -5037,7 +5037,7 @@ class LIB_API PlayerStatus {
         inline uint32_t numberOfEntries() const noexcept {
             return m_numberOfEntries;
         }
-        
+
         inline PlayerStatus& currentEntryForPlayback(const uint32_t &v) noexcept {
             m_currentEntryForPlayback = v;
             return *this;
@@ -5045,7 +5045,7 @@ class LIB_API PlayerStatus {
         inline uint32_t currentEntryForPlayback() const noexcept {
             return m_currentEntryForPlayback;
         }
-        
+
 
     public:
         template<class Visitor>
@@ -5053,35 +5053,35 @@ class LIB_API PlayerStatus {
             (void)fieldId;
             (void)visitor;
 //            visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             if (1 == fieldId) {
                 doVisit(1, std::move("uint8_t"s), std::move("state"s), m_state, visitor);
                 return;
             }
-            
+
             if (2 == fieldId) {
                 doVisit(2, std::move("uint32_t"s), std::move("numberOfEntries"s), m_numberOfEntries, visitor);
                 return;
             }
-            
+
             if (3 == fieldId) {
                 doVisit(3, std::move("uint32_t"s), std::move("currentEntryForPlayback"s), m_currentEntryForPlayback, visitor);
                 return;
             }
-            
+
 //            visitor.postVisit();
         }
 
         template<class Visitor>
         inline void accept(Visitor &visitor) {
             visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             doVisit(1, std::move("uint8_t"s), std::move("state"s), m_state, visitor);
-            
+
             doVisit(2, std::move("uint32_t"s), std::move("numberOfEntries"s), m_numberOfEntries, visitor);
-            
+
             doVisit(3, std::move("uint32_t"s), std::move("currentEntryForPlayback"s), m_currentEntryForPlayback, visitor);
-            
+
             visitor.postVisit();
         }
 
@@ -5089,24 +5089,24 @@ class LIB_API PlayerStatus {
         inline void accept(PreVisitor &&preVisit, Visitor &&visit, PostVisitor &&postVisit) {
             (void)visit; // Prevent warnings from empty messages.
             std::forward<PreVisitor>(preVisit)(ID(), ShortName(), LongName());
-            
+
             doTripletForwardVisit(1, std::move("uint8_t"s), std::move("state"s), m_state, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(2, std::move("uint32_t"s), std::move("numberOfEntries"s), m_numberOfEntries, preVisit, visit, postVisit);
-            
+
             doTripletForwardVisit(3, std::move("uint32_t"s), std::move("currentEntryForPlayback"s), m_currentEntryForPlayback, preVisit, visit, postVisit);
-            
+
             std::forward<PostVisitor>(postVisit)();
         }
 
     private:
-        
+
         uint8_t m_state{ 0 }; // field identifier = 1.
-        
+
         uint32_t m_numberOfEntries{ 0 }; // field identifier = 2.
-        
+
         uint32_t m_currentEntryForPlayback{ 0 }; // field identifier = 3.
-        
+
 };
 }}
 
@@ -5247,7 +5247,7 @@ class LIB_API RecorderCommand {
         ~RecorderCommand() = default;
 
     public:
-        
+
         inline RecorderCommand& command(const uint8_t &v) noexcept {
             m_command = v;
             return *this;
@@ -5255,7 +5255,7 @@ class LIB_API RecorderCommand {
         inline uint8_t command() const noexcept {
             return m_command;
         }
-        
+
 
     public:
         template<class Visitor>
@@ -5263,21 +5263,21 @@ class LIB_API RecorderCommand {
             (void)fieldId;
             (void)visitor;
 //            visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             if (1 == fieldId) {
                 doVisit(1, std::move("uint8_t"s), std::move("command"s), m_command, visitor);
                 return;
             }
-            
+
 //            visitor.postVisit();
         }
 
         template<class Visitor>
         inline void accept(Visitor &visitor) {
             visitor.preVisit(ID(), ShortName(), LongName());
-            
+
             doVisit(1, std::move("uint8_t"s), std::move("command"s), m_command, visitor);
-            
+
             visitor.postVisit();
         }
 
@@ -5285,16 +5285,16 @@ class LIB_API RecorderCommand {
         inline void accept(PreVisitor &&preVisit, Visitor &&visit, PostVisitor &&postVisit) {
             (void)visit; // Prevent warnings from empty messages.
             std::forward<PreVisitor>(preVisit)(ID(), ShortName(), LongName());
-            
+
             doTripletForwardVisit(1, std::move("uint8_t"s), std::move("command"s), m_command, preVisit, visit, postVisit);
-            
+
             std::forward<PostVisitor>(postVisit)();
         }
 
     private:
-        
+
         uint8_t m_command{ 0 }; // field identifier = 1.
-        
+
 };
 }}
 
@@ -9451,9 +9451,9 @@ inline std::pair<std::vector<MetaMessage>, MessageParser::MessageParserErrorCode
         PRIMITIVE_TYPE              <- < 'bool' / 'float' / 'double' /
                                          'char' /
                                          'bytes' / 'string' /
-                                         'int8' / 'uint8' / 
-                                         'int16' / 'uint16' / 
-                                         'int32' / 'uint32' / 
+                                         'int8' / 'uint8' /
+                                         'int16' / 'uint16' /
+                                         'int32' / 'uint32' /
                                          'int64' / 'uint64' /
                                          MESSAGE_TYPE >
 
@@ -16062,7 +16062,7 @@ public:
     virtual void pop() override {
         items_.erase(items_.begin());
     }
-    
+
     virtual const basic_data<string_type>* get(const string_type& name) const override {
         // process {{.}} name
         if (name.size() == 1 && name.at(0) == '.') {
@@ -16117,7 +16117,7 @@ class context_internal {
 public:
     basic_context<string_type>& ctx;
     delimiter_set<string_type> delim_set;
-    
+
     context_internal(basic_context<string_type>& a_ctx)
         : ctx(a_ctx)
     {
@@ -16185,19 +16185,19 @@ public:
         skip,
     };
     using walk_callback = std::function<walk_control(component&)>;
-    
+
     component() {}
     component(const string_type& t, string_size_type p) : text(t), position(p) {}
-    
+
     bool is_text() const {
         return tag.type == tag_type::text;
     }
-    
+
     bool is_newline() const {
         return is_text() && ((text.size() == 2 && text[0] == '\r' && text[1] == '\n') ||
         (text.size() == 1 && (text[0] == '\n' || text[0] == '\r')));
     }
-    
+
     bool is_non_newline_whitespace() const {
         return is_text() && !is_newline() && text.size() == 1 && (text[0] == ' ' || text[0] == '\t');
     }
@@ -16209,7 +16209,7 @@ public:
             }
         }
     }
-    
+
 private:
     walk_control walk(const walk_callback& callback) {
         walk_control control{callback(*this)};
@@ -16238,19 +16238,19 @@ private:
     void parse(const string_type& input, context_internal<string_type>& ctx, component<string_type>& root_component, string_type& error_message) const {
         using string_size_type = typename string_type::size_type;
         using streamstring = std::basic_ostringstream<typename string_type::value_type>;
-        
+
         const string_type brace_delimiter_end_unescaped(3, '}');
         const string_size_type input_size{input.size()};
 
         bool current_delimiter_is_brace{ctx.delim_set.is_default()};
-        
+
         std::vector<component<string_type>*> sections{&root_component};
         std::vector<string_size_type> section_starts;
         string_type current_text;
         string_size_type current_text_position = -1;
-        
+
         current_text.reserve(input_size);
-        
+
         const auto process_current_text = [&current_text, &current_text_position, &sections]() {
             if (!current_text.empty()) {
                 const component<string_type> comp{current_text, current_text_position};
@@ -16259,7 +16259,7 @@ private:
                 current_text_position = -1;
             }
         };
-        
+
         const std::vector<string_type> whitespace{
             string_type(1, '\r') + string_type(1, '\n'),
             string_type(1, '\n'),
@@ -16267,10 +16267,10 @@ private:
             string_type(1, ' '),
             string_type(1, '\t'),
         };
-        
+
         for (string_size_type input_position = 0; input_position != input_size;) {
             bool parse_tag = false;
-            
+
             if (input.compare(input_position, ctx.delim_set.begin.size(), ctx.delim_set.begin) == 0) {
                 process_current_text();
 
@@ -16285,12 +16285,12 @@ private:
                         const component<string_type> comp{whitespace_text, input_position};
                         sections.back()->children.push_back(comp);
                         input_position += whitespace_text.size();
-                        
+
                         parsed_whitespace = true;
                         break;
                     }
                 }
-                
+
                 if (!parsed_whitespace) {
                     if (current_text.empty()) {
                         current_text_position = input_position;
@@ -16299,14 +16299,14 @@ private:
                     input_position++;
                 }
             }
-            
+
             if (!parse_tag) {
                 continue;
             }
-            
+
             // Find the next tag start delimiter
             const string_size_type tag_location_start = input_position;
-            
+
             // Find the next tag end delimiter
             string_size_type tag_contents_location{tag_location_start + ctx.delim_set.begin.size()};
             const bool tag_is_unescaped_var{current_delimiter_is_brace && tag_location_start != (input_size - 2) && input.at(tag_contents_location) == ctx.delim_set.begin.at(0)};
@@ -16322,7 +16322,7 @@ private:
                 error_message.assign(ss.str());
                 return;
             }
-            
+
             // Parse tag
             const string_type tag_contents{trim(string_type{input, tag_contents_location, tag_location_end - tag_contents_location})};
             component<string_type> comp;
@@ -16342,10 +16342,10 @@ private:
             }
             comp.position = tag_location_start;
             sections.back()->children.push_back(comp);
-            
+
             // Start next search after this tag
             input_position = tag_location_end + current_tag_delimiter_end_size;
-            
+
             // Push or pop sections
             if (comp.tag.is_section_begin()) {
                 sections.push_back(&sections.back()->children.back());
@@ -16362,9 +16362,9 @@ private:
                 section_starts.pop_back();
             }
         }
-        
+
         process_current_text();
-        
+
         // Check for sections without an ending tag
         root_component.walk_children([&error_message](component<string_type>& comp) -> typename component<string_type>::walk_control {
             if (!comp.tag.is_section_begin()) {
@@ -16383,7 +16383,7 @@ private:
             return;
         }
     }
-    
+
     bool is_set_delimiter_valid(const string_type& delimiter) const {
         // "Custom delimiters may not contain whitespace or the equals sign."
         for (const auto ch : delimiter) {
@@ -16393,7 +16393,7 @@ private:
         }
         return true;
     }
-    
+
     bool parse_set_delimiter_tag(const string_type& contents, delimiter_set<string_type>& delimiter_set) const {
         // Smallest legal tag is "=X X="
         if (contents.size() < 5) {
@@ -16418,7 +16418,7 @@ private:
         delimiter_set.end = end;
         return true;
     }
-    
+
     void parse_tag_contents(bool is_unescaped_var, const string_type& contents, mstch_tag<string_type>& tag) const {
         if (is_unescaped_var) {
             tag.type = tag_type::unescaped_variable;
@@ -16476,7 +16476,7 @@ public:
     bool is_valid() const {
         return error_message_.empty();
     }
-    
+
     const string_type& error_message() const {
         return error_message_;
     }
@@ -16493,7 +16493,7 @@ public:
         });
         return stream;
     }
-    
+
     string_type render(const basic_data<string_type>& data) {
         std::basic_ostringstream<typename string_type::value_type> ss;
         return render(data, ss).str();
@@ -16530,12 +16530,12 @@ private:
         : escape_(html_escape<string_type>)
     {
     }
-    
+
     basic_mustache(const string_type& input, context_internal<string_type>& ctx)
         : basic_mustache() {
         parser<string_type> parser{input, ctx, root_component_, error_message_};
     }
-    
+
     void walk(const typename component<string_type>::walk_callback& callback) {
         root_component_.walk_children(callback);
     }
@@ -16559,7 +16559,7 @@ private:
             handler(comp.text);
             return component<string_type>::walk_control::walk;
         }
-        
+
         const mstch_tag<string_type>& tag{comp.tag};
         const basic_data<string_type>* var = nullptr;
         switch (tag.type) {
@@ -16611,7 +16611,7 @@ private:
             default:
                 break;
         }
-        
+
         return component<string_type>::walk_control::walk;
     }
 
@@ -16620,7 +16620,7 @@ private:
         unescape,
         optional,
     };
-    
+
     bool render_lambda(const render_handler& handler, const basic_data<string_type>* var, context_internal<string_type>& ctx, render_lambda_escape escape, const string_type& text, bool parse_with_same_context) {
         const typename basic_renderer<string_type>::type2 render2 = [this, &ctx, parse_with_same_context, escape](const string_type& text, bool escaped) {
             const auto process_template = [this, &ctx, escape, escaped](basic_mustache& tmpl) -> string_type {
@@ -16667,7 +16667,7 @@ private:
         }
         return error_message_.empty();
     }
-    
+
     bool render_variable(const render_handler& handler, const basic_data<string_type>* var, context_internal<string_type>& ctx, bool escaped) {
         if (var->is_string()) {
             const auto varstr = var->string_value();

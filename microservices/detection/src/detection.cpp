@@ -35,12 +35,13 @@ int32_t main(int32_t argc, char **argv)
 
   //**VARIABLES**//
   int32_t retCode{1};
+  float framesCounted=0, objectsCounted=0;
   bool stopSignPresent=false, stopSignDetected=false, westCar=false, northCar=true, eastCar=false;
   uint16_t status=0;
   String stopSigns_cascade_name;
   CascadeClassifier stopSigns_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
-  vector<Rect> car_rectangle, stop_rectangle;
+  vector<Rect> car_rectangle, stop_rectangle, stopSigns;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
   Rect temp, empty;
   Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2,resizedImg2;
@@ -109,9 +110,9 @@ int32_t main(int32_t argc, char **argv)
       /*registered callback*/
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
 
-	  // Variables to get average stop signs detected of every fifth frame.
-	  float framesCounted = 0;
-      float objectsCounted = 0;
+  	  // Variables to get average stop signs detected of every fifth frame.
+  	  framesCounted = 0;
+      objectsCounted = 0;
       // Endless loop; end the program by pressing Ctrl-C.
       while (carlos_session.isRunning() || kiwi_session.isRunning())
       {
@@ -141,40 +142,39 @@ int32_t main(int32_t argc, char **argv)
         //==============================
 		    // OBJECT DETECTION
 		    //==============================
-        vector<Rect> stopSigns;
         stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
         size_t nStopSigns = stopSigns.size();
         objectsCounted += (double)nStopSigns;
-		framesCounted++;
+		    framesCounted++;
 
-		if (nStopSigns != 0) {
-	      for (size_t i = 0; i < nStopSigns; i++) {
-	        Point center(stopSigns[i].x + stopSigns[i].width / 2, stopSigns[i].y + stopSigns[i].height / 2);
-	        ellipse(resizedImg, center, Size(stopSigns[i].width / 2, stopSigns[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
-	      }
-		}
+    		if (nStopSigns != 0) {
+    	      for (size_t i = 0; i < nStopSigns; i++) {
+    	        Point center(stopSigns[i].x + stopSigns[i].width / 2, stopSigns[i].y + stopSigns[i].height / 2);
+    	        ellipse(resizedImg, center, Size(stopSigns[i].width / 2, stopSigns[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+    	      }
+    		}
 
-		if (framesCounted >= 5) {
-			int avgObjects = int((objectsCounted / 5) + 0.5);
-			cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
-			framesCounted = 0;
-			objectsCounted = 0;
+    		if (framesCounted >= 5) {
+    			int avgObjects = int((objectsCounted / 5) + 0.5);
+    			cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
+    			framesCounted = 0;
+    			objectsCounted = 0;
 
-		    stopSignPresent = (0 < avgObjects) ? true : false;
-	    	if (stopSignPresent) {
-	    		stopSignDetected = true;
-	    	}
-	    	if (stopSignPresent && stopSignDetected) {
-	    		signStatus.detected(true);
-	    		signStatus.reached(false);
-	    	} else if (!stopSignPresent && stopSignDetected) {
-	    		signStatus.detected(false);
-	    		signStatus.reached(true);
-	    	}
-	    	if (stopSignDetected) {
-	    		carlos_session.send(signStatus);
-	    	}
-		}
+    		    stopSignPresent = (0 < avgObjects) ? true : false;
+    	    	if (stopSignPresent) {
+    	    		stopSignDetected = true;
+    	    	}
+    	    	if (stopSignPresent && stopSignDetected) {
+    	    		signStatus.detected(true);
+    	    		signStatus.reached(false);
+    	    	} else if (!stopSignPresent && stopSignDetected) {
+    	    		signStatus.detected(false);
+    	    		signStatus.reached(true);
+    	    	}
+    	    	if (stopSignDetected) {
+    	    		carlos_session.send(signStatus);
+    	    	}
+    		}
         cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
         //==============================
 

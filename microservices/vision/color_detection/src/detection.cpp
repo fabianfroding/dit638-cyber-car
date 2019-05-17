@@ -120,7 +120,7 @@ int32_t main(int32_t argc, char **argv)
           // the camera to provide the next frame. Thus, any
           // computationally heavy algorithms should be placed outside
           // lock/unlock.
-          Mat wrapped(HEIGHT - 60, WIDTH, CV_8UC4, sharedMemory->data());
+          Mat wrapped(HEIGHT - 110, WIDTH, CV_8UC4, sharedMemory->data());
           img = wrapped.clone();
           img2= wrapped.clone();
         }
@@ -163,7 +163,7 @@ int32_t main(int32_t argc, char **argv)
           for (size_t k = 0; k < car_contours.size(); k++)
           {
             approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-            if (arcLength(car_contours[k], false) > 120)
+            if (arcLength(car_contours[k], false) > 60)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
@@ -174,7 +174,7 @@ int32_t main(int32_t argc, char **argv)
               if(getCenterOfContour(car_contours[k]).x > resizedImg.size().width/100*65) eastCar=true;
               //else eastCar=false;
             }
-            groupRectangles(car_rectangle, 3, 0.7); //group overlapping rectangles
+            groupRectangles(car_rectangle, 3, 0.65); //group overlapping rectangles
             drawRectangle(car_rectangle[k], resizedImg, edge);
           }
             cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;

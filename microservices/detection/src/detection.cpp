@@ -35,7 +35,8 @@ int32_t main(int32_t argc, char **argv)
 
   //**VARIABLES**//
   int32_t retCode{1};
-  bool stopSignPresent = false, stopSignDetected = false;
+  uint16_t status=0;
+  bool stopSignPresent=false, stopSignDetected=false;
   String stopSigns_cascade_name;
   CascadeClassifier stopSigns_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
@@ -92,12 +93,11 @@ int32_t main(int32_t argc, char **argv)
       // cout<<"hello!"<<flush;
       // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
       cluon::OD4Session carlos_session{CARLOS_SESSION};
-      cluon::OD4Session car_session{CID_SESSION};
+      cluon::OD4Session kiwi_session{CID_SESSION};
 
       opendlv::proxy::GroundSteeringRequest wheel;
       carlos::color::lead_car lead_car;
       carlos::color::intersection intersection_tracker;
-      carlos::color::status status;
       carlos::object::sign signStatus;
       // carlos::vision::sign sign_tracker;
 
@@ -109,6 +109,7 @@ int32_t main(int32_t argc, char **argv)
         auto msg = cluon::extractMessage<carlos::color::status>(std::move(envelope));
         /*store data*/
         SEMAPHORE = msg.semaphore();
+        status= msg.stage();
       };
       /*registered callback*/
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
@@ -117,7 +118,7 @@ int32_t main(int32_t argc, char **argv)
 	  float framesCounted = 0;
       float objectsCounted = 0;
       // Endless loop; end the program by pressing Ctrl-C.
-      while (carlos_session.isRunning() || car_session.isRunning())
+      while (carlos_session.isRunning() || kiwi_session.isRunning())
       {
         // Wait for a notification of a new frame.
         sharedMemory->wait();
@@ -138,7 +139,6 @@ int32_t main(int32_t argc, char **argv)
 
         resize(img, resizedImg, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
         resize(img2, resizedImg2, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img2.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
-        //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
@@ -228,7 +228,7 @@ int32_t main(int32_t argc, char **argv)
             wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
             if (SEMAPHORE)
             {
-              car_session.send(wheel); //send to car
+              kiwi_session.send(wheel); //send to car
             }
             lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
             lead_car.area(car_rectangle[k].area());                          //area                            //number of cars queued

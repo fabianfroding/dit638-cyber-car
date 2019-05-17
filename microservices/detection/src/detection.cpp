@@ -30,14 +30,15 @@ int32_t main(int32_t argc, char **argv)
 {
   CommandLineParser parser(argc, argv,
                            "{help h||}"
-                           "{car_cascade|./cascade.xml|Path to car cascade.}"
+                           "{stopSigns_cascade|./cascade.xml|Path to car cascade.}"
                            "{camera|0|Camera device number.}");
 
   //**VARIABLES**//
   int32_t retCode{1};
   bool stopSignPresent=false, stopSignDetected=false, westCar=false, northCar=true, eastCar=false;
-  String car_cascade_name;
-  CascadeClassifier car_cascade;
+  uint16_t status=0;
+  String stopSigns_cascade_name;
+  CascadeClassifier stopSigns_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
   vector<Rect> car_rectangle, stop_rectangle;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
@@ -50,10 +51,11 @@ int32_t main(int32_t argc, char **argv)
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
   //**END VARIABLES**//
 
-  car_cascade_name = parser.get<String>("car_cascade");
-  if (!car_cascade.load(car_cascade_name)) {
-      cout << "--(!)Error loading car cascade\n";
-      return -1;
+  stopSigns_cascade_name = parser.get<String>("stopSigns_cascade");
+  if (!stopSigns_cascade.load(stopSigns_cascade_name))
+  {
+    cout << "--(!)Error loading car cascade\n";
+    return -1;
   };
 
   auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
@@ -107,6 +109,9 @@ int32_t main(int32_t argc, char **argv)
       /*registered callback*/
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
 
+	  // Variables to get average stop signs detected of every fifth frame.
+	  float framesCounted = 0;
+      float objectsCounted = 0;
       // Endless loop; end the program by pressing Ctrl-C.
       while (carlos_session.isRunning() || kiwi_session.isRunning())
       {
@@ -122,7 +127,7 @@ int32_t main(int32_t argc, char **argv)
           // lock/unlock.
           Mat wrapped(HEIGHT - 110, WIDTH, CV_8UC4, sharedMemory->data());
           img = wrapped.clone();
-          img2= wrapped.clone();
+          img2 = wrapped.clone();
         }
         sharedMemory->unlock();
 
@@ -132,28 +137,47 @@ int32_t main(int32_t argc, char **argv)
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
-        vector<Rect> cars;
-        car_cascade.detectMultiScale(obj_frame, cars);
-        //make an ellipse around the detected stop signs
-        if(cars.size()!=0){
-          for (size_t i = 0; i < cars.size(); i++) {
-              Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
-              ellipse(resizedImg, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
-          }
-        }
-        if(stopSignPresent==true && cars.size()==0) {
-          stopSignPresent=false;
-          stopSignDetected=true;
-        }
-        else if(cars.size()>0) {
-          stopSignPresent=true;
-          stopSignDetected=true;
-        }
-        signStatus.detected(stopSignPresent);
-        signStatus.reached(stopSignDetected);
-        carlos_session.send(signStatus);
 
-        //cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
+        //==============================
+		    // OBJECT DETECTION
+		    //==============================
+        vector<Rect> stopSigns;
+        stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
+        size_t nStopSigns = stopSigns.size();
+        objectsCounted += (double)nStopSigns;
+		framesCounted++;
+
+		if (nStopSigns != 0) {
+	      for (size_t i = 0; i < nStopSigns; i++) {
+	        Point center(stopSigns[i].x + stopSigns[i].width / 2, stopSigns[i].y + stopSigns[i].height / 2);
+	        ellipse(resizedImg, center, Size(stopSigns[i].width / 2, stopSigns[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+	      }
+		}
+
+		if (framesCounted >= 5) {
+			int avgObjects = int((objectsCounted / 5) + 0.5);
+			cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
+			framesCounted = 0;
+			objectsCounted = 0;
+
+		    stopSignPresent = (0 < avgObjects) ? true : false;
+	    	if (stopSignPresent) {
+	    		stopSignDetected = true;
+	    	}
+	    	if (stopSignPresent && stopSignDetected) {
+	    		signStatus.detected(true);
+	    		signStatus.reached(false);
+	    	} else if (!stopSignPresent && stopSignDetected) {
+	    		signStatus.detected(false);
+	    		signStatus.reached(true);
+	    	}
+	    	if (stopSignDetected) {
+	    		carlos_session.send(signStatus);
+	    	}
+		}
+        cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
+        //==============================
+
         car_contours = getContours(img_hsv, car_low, car_high);
         car_polygons.resize(car_contours.size());
         car_rectangle.resize(car_contours.size());
@@ -189,7 +213,7 @@ int32_t main(int32_t argc, char **argv)
         if (VERBOSE)
         {
           imshow(sharedMemory->name().c_str(), resizedImg);
-        //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
+          //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
           waitKey(1);
         }
       }

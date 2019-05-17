@@ -56,7 +56,7 @@ int32_t main(int32_t argc, char **argv)
         float SPEED = 0, PREV_SPEED = SPEED;
 
         /*callbacks*/
-        auto get_status = [VERBOSE, &SEMAPHORE, &STAGE, &kiwi_session](cluon::data::Envelope &&envelope) {
+        auto get_status = [&SEMAPHORE, &STAGE, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::status>(std::move(envelope));
             /*store data*/
@@ -68,18 +68,6 @@ int32_t main(int32_t argc, char **argv)
                 opendlv::proxy::PedalPositionRequest pedal; //kiwi
                 pedal.position(0);
                 kiwi_session.send(pedal);
-            }
-
-            if (VERBOSE)
-            {
-                if (SEMAPHORE)
-                {
-                    std::cout << "RECIEVED -> SEMAPHORE [UNLOCKED]" << std::endl;
-                }
-                else
-                {
-                    std::cout << "RECIEVED -> SEMAPHORE [LOCKED]" << std::endl;
-                }
             }
         };
 
@@ -106,7 +94,7 @@ int32_t main(int32_t argc, char **argv)
 
                         if (VERBOSE)
                         {
-                            std::cout << "Sent stop instructions. Object Detected at [" << sensor << "]" << std::endl;
+                            std::cout << "STAGE(" + std::to_string(STAGE) + "):Object Detected at [" << sensor << "]" << std::endl;
                         }
                     }
                     else
@@ -116,7 +104,7 @@ int32_t main(int32_t argc, char **argv)
 
                         if (VERBOSE)
                         {
-                            std::cout << "Sent move instructions at speed [" << SPEED << "]" << std::endl;
+                            std::cout << "STAGE(" + std::to_string(STAGE) + "):Sent move instructions at speed [" << SPEED << "]" << std::endl;
                         }
                     }
                 }

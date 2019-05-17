@@ -33,9 +33,9 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--acc] filter the acc messages" << std::endl;
         std::cerr << argv[0] << "[--cmd] filter the acc messages" << std::endl;
         std::cerr << argv[0] << "[--color] filter the acc messages" << std::endl;
-        std::cerr << argv[0] << "[--object] filter the acc messages" << std::endl;
+        std::cerr << argv[0] << "[--sign] filter the acc messages" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
-        std::cerr << "example:  " << argv[0] << "--verbose --object" << std::endl;
+        std::cerr << "example:  " << argv[0] << "--verbose --sign" << std::endl;
         return -1;
     }
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
@@ -43,7 +43,7 @@ int32_t main(int32_t argc, char **argv)
     const bool ACC{commandlineArguments.count("acc") != 0};
     // const bool CMD{commandlineArguments.count("cmd") != 0};
     const bool COLOR{commandlineArguments.count("color") != 0};
-    const bool OBJECT{commandlineArguments.count("object") != 0};
+    const bool SIGN{commandlineArguments.count("sign") != 0};
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
 
@@ -111,7 +111,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         bool sign_detected = false, sign_reached = false; //object service
-        auto object_sign = [VERBOSE, OBJECT, &STAGE, &carlos_session, &services, &LOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
+        auto object_sign = [VERBOSE, SIGN, &STAGE, &carlos_session, &services, &LOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::object::sign>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -119,43 +119,40 @@ int32_t main(int32_t argc, char **argv)
             sign_reached = msg.reached();
 
             /*STAGE LOGIC*/
-            if (!(sign_detected == false) && !(sign_reached == false))
+            if (sign_detected && (sign_reached == false))
             {
-                if (sign_detected && (sign_reached == false))
-                {
-                    STAGE = 1;
-                    services.acc.stage(STAGE);
-                    services.cmd.stage(STAGE);
-                    services.color.stage(STAGE);
-                    services.object.stage(STAGE);
+                STAGE = 1;
+                services.acc.stage(STAGE);
+                services.cmd.stage(STAGE);
+                services.color.stage(STAGE);
+                services.object.stage(STAGE);
 
-                    //send messages
-                    carlos_session.send(services.acc);
-                    carlos_session.send(services.cmd);
-                    carlos_session.send(services.color);
-                    carlos_session.send(services.object);
-                }
-                if (sign_reached && (sign_detected == false))
-                {
-                    STAGE = 2;
+                //send messages
+                carlos_session.send(services.acc);
+                carlos_session.send(services.cmd);
+                carlos_session.send(services.color);
+                carlos_session.send(services.object);
+            }
+            if (sign_reached && (sign_detected == false))
+            {
+                STAGE = 2;
 
-                    services.acc.stage(STAGE);
-                    services.acc.semaphore(LOCK);
-                    services.cmd.stage(STAGE);
-                    services.color.stage(STAGE);
-                    services.object.stage(STAGE);
+                services.acc.stage(STAGE);
+                services.acc.semaphore(LOCK);
+                services.cmd.stage(STAGE);
+                services.color.stage(STAGE);
+                services.object.stage(STAGE);
 
-                    //send messages
-                    carlos_session.send(services.acc);
-                    carlos_session.send(services.cmd);
-                    carlos_session.send(services.color);
-                    carlos_session.send(services.object);
-                }
+                //send messages
+                carlos_session.send(services.acc);
+                carlos_session.send(services.cmd);
+                carlos_session.send(services.color);
+                carlos_session.send(services.object);
             }
 
-            if (VERBOSE || OBJECT)
+            if (VERBOSE || SIGN)
             {
-                std::cout << "inbox->object(" + std::to_string(STAGE) + ")[   detected=" + std::to_string(sign_detected) + ",   reached=" + std::to_string(sign_reached) + "]" << std::endl;
+                std::cout << "inbox->sign(" + std::to_string(STAGE) + ")[   detected=" + std::to_string(sign_detected) + ",   reached=" + std::to_string(sign_reached) + "]" << std::endl;
             }
         };
 

@@ -84,186 +84,92 @@ int32_t main(int32_t argc, char **argv)
         carlos_session.dataTrigger(carlos::cmd::status::ID(), get_status);
         carlos_session.dataTrigger(carlos::cmd::turn_status::ID(), turn_status);
 
-        // float turn = TURN;
-        // float speed = SP;
-        // uint16_t delay_time = DELAY, message = 0;
-
-        // while (kiwi_session.isRunning())
-        // {
-        //     if (SEMAPHORE)
-        //     {
-        //         if (DEBUG)
-        //         {
-        //             std::cout << "turn angle:" << std::endl;
-        //             scanf("%f", &turn);
-        //             std::cout << "speed:" << std::endl;
-        //             scanf("%f", &speed);
-        //             std::cout << "delay:" << std::endl;
-        //             scanf("%hd", &delay_time);
-        //             std::cout << "message:" << std::endl;
-        //             scanf("%hd", &message);
-
-        //             if ((-0.6 <= turn && turn <= 0.6) && speed >= 0 /*  && delay_time >= 0 */)
-        //             {
-        //                 //turn wheel
-        //                 wheel.groundSteering(turn);
-        //                 kiwi_session.send(wheel);
-
-        //                 //speed
-        //                 pedal.position(speed);
-        //                 kiwi_session.send(pedal);
-
-        //                 //delay
-        //                 std::chrono::milliseconds timer(delay_time); // or whatever
-        //                 std::this_thread::sleep_for(timer);
-
-        //                 //stop vehicle
-        //                 pedal.position(0);
-        //                 kiwi_session.send(pedal);
-
-        //                 //straighten wheel
-        //                 wheel.groundSteering(0);
-        //                 kiwi_session.send(wheel);
-
-        //                 command.turn(message);
-        //                 carlos_session.send(command);
-        //             }
-        //             else
-        //             {
-        //                 std::cout << "ERROR" << std::endl;
-        //                 if (!(-0.6 <= turn && turn <= 0.6))
-        //                 {
-        //                     std::cout << "the turn angle should be between -0.6 and 0.6" << std::endl;
-        //                 }
-        //                 if (!(speed >= 0))
-        //                 {
-        //                     std::cout << "the speed should be greater than or equal to 0" << std::endl;
-        //                 }
-        //                 /* if (!(delay_time >= 0))
-        //             {
-        //                 std::cout << "the delay time should be greater than or equal to 0" << std::endl;
-        //             } */
-        //             }
-        //             if (turn == 0 && speed == 0 && delay_time == 0)
-        //             {
-        //                 std::cout << "DEBUG session ended." << std::endl;
-        //                 break;
-        //             }
-        //         }
-
-        //         if (STAGE == 3)
-        //         {
-        //             const int16_t left = 1, right = 2, neutral = 0;
-        //             int16_t userInp = -1;
-        //             /*leaving intersection*/
-        //             std::cout << "press: " << std::endl;
-        //             std::cout << "[" << left << "] for left turn" << std::endl;
-        //             std::cout << "[" << right << "] for right turn" << std::endl;
-        //             std::cout << "[" << neutral << "] for neutral" << std::endl;
-        //             //take in input
-        //             scanf("%hd", &userInp);
-
-        //             switch (userInp)
-        //             {
-        //             case left:
-        //                 std::cout << "Carlos is turning [Left]" << std::endl;
-        //                 break;
-        //             case right:
-        //                 std::cout << "Carlos is turning [Right]" << std::endl;
-        //                 break;
-        //             case neutral:
-        //                 std::cout << "Carlos is [Straight]" << std::endl;
-        //                 break;
-        //             }
-        //             //send data
-        //             if (SEMAPHORE)
-        //             {
-        //                 kiwi_session.send(wheel);
-        //             }
-        //         }
-        //     }
-        //     else
-        //     {
-        //         std::cout << "RECIEVED -> SEMAPHORE [LOCKED]" << std::endl;
-        //     }
-
         opendlv::proxy::GroundSteeringRequest wheel; //[car] groundSteering
         opendlv::proxy::PedalPositionRequest pedal;  //[car] pedal position
 
         while (car_session.isRunning())
         {
+            std::cout << "West turn: " + turn_west + ", North turn: " + turn_north + ",East turn: " + turn_east << std::endl;
             std::cout << "Direction (9, 12, 3):" << std::endl;
             scanf("%d", &dir);
 
             switch (dir)
             {
             case 9:
-                std::cout << "carlos turning left" << std::endl;
-                //turn wheel
-                wheel.groundSteering(0.14);
-                car_session.send(wheel);
+                if (turn_west)
+                {
+                    std::cout << "carlos turning left" << std::endl;
+                    //turn wheel
+                    wheel.groundSteering(0.14);
+                    car_session.send(wheel);
 
-                //speed
-                pedal.position(0.13);
-                car_session.send(pedal);
+                    //speed
+                    pedal.position(0.13);
+                    car_session.send(pedal);
 
-                //delay
-                std::chrono::milliseconds timer(3); // or whatever
-                std::this_thread::sleep_for(timer);
+                    //delay
+                    std::chrono::milliseconds timer(3); // or whatever
+                    std::this_thread::sleep_for(timer);
 
-                //stop vehicle
-                pedal.position(0);
-                car_session.send(pedal);
+                    //stop vehicle
+                    pedal.position(0);
+                    car_session.send(pedal);
 
-                //straighten wheel
-                wheel.groundSteering(0);
-                car_session.send(wheel);
+                    //straighten wheel
+                    wheel.groundSteering(0);
+                    car_session.send(wheel);
+                }
                 break;
-
             case 12:
-                std::cout << "carlos turning right" << std::endl;
-                //turn wheel
-                wheel.groundSteering(0);
-                car_session.send(wheel);
+                if (turn_north)
+                {
+                    std::cout << "carlos turning right" << std::endl;
+                    //turn wheel
+                    wheel.groundSteering(0);
+                    car_session.send(wheel);
 
-                //speed
-                pedal.position(0.12);
-                car_session.send(pedal);
+                    //speed
+                    pedal.position(0.12);
+                    car_session.send(pedal);
 
-                //delay
-                std::chrono::milliseconds timer(3); // or whatever
-                std::this_thread::sleep_for(timer);
+                    //delay
+                    std::chrono::milliseconds timer(3); // or whatever
+                    std::this_thread::sleep_for(timer);
 
-                //stop vehicle
-                pedal.position(0);
-                car_session.send(pedal);
+                    //stop vehicle
+                    pedal.position(0);
+                    car_session.send(pedal);
 
-                //straighten wheel
-                wheel.groundSteering(0);
-                car_session.send(wheel);
+                    //straighten wheel
+                    wheel.groundSteering(0);
+                    car_session.send(wheel);
+                }
                 break;
 
             case 3:
-                std::cout << "carlos turning right" << std::endl;
-                //turn wheel
-                wheel.groundSteering(-0.25);
-                car_session.send(wheel);
+                if (turn_east)
+                {
+                    std::cout << "carlos turning right" << std::endl;
+                    //turn wheel
+                    wheel.groundSteering(-0.25);
+                    car_session.send(wheel);
 
-                //speed
-                pedal.position(0.13);
-                car_session.send(pedal);
+                    //speed
+                    pedal.position(0.13);
+                    car_session.send(pedal);
 
-                //delay
-                std::chrono::milliseconds timer(3); // or whatever
-                std::this_thread::sleep_for(timer);
+                    //delay
+                    std::chrono::milliseconds timer(3); // or whatever
+                    std::this_thread::sleep_for(timer);
 
-                //stop vehicle
-                pedal.position(0);
-                car_session.send(pedal);
+                    //stop vehicle
+                    pedal.position(0);
+                    car_session.send(pedal);
 
-                //straighten wheel
-                wheel.groundSteering(0);
-                car_session.send(wheel);
+                    //straighten wheel
+                    wheel.groundSteering(0);
+                    car_session.send(wheel);
+                }
                 break;
             case default:
                 break;

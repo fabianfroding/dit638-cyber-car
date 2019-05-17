@@ -82,50 +82,50 @@ int32_t main(int32_t argc, char **argv)
                 carlos_session.send(sign_tracker);
                 std::this_thread::sleep_for(timer);
 
-                int16_t west_sign = -1, north_sign = -1, east_sign = -1;
-                std::cout << "Choose whether the lanes are accesible or not" << std::endl;
-                std::cout << "enter [1] to lock or [0] to unlock the west lane" << std::endl;
-                scanf("%hd", &west_sign);
-                std::cout << "enter [1] to lock or [0] to unlock the north lane" << std::endl;
-                scanf("%hd", &north_sign);
-                std::cout << "enter [1] to lock or [0] to unlock the east lane" << std::endl;
-                scanf("%hd", &east_sign);
+                // int16_t west_sign = -1, north_sign = -1, east_sign = -1;
+                // std::cout << "Choose whether the lanes are accesible or not" << std::endl;
+                // std::cout << "enter [1] to lock or [0] to unlock the west lane" << std::endl;
+                // scanf("%hd", &west_sign);
+                // std::cout << "enter [1] to lock or [0] to unlock the north lane" << std::endl;
+                // scanf("%hd", &north_sign);
+                // std::cout << "enter [1] to lock or [0] to unlock the east lane" << std::endl;
+                // scanf("%hd", &east_sign);
 
-                if ((west_sign != 1 || west_sign != 0) && (north_sign != 1 || north_sign != 0) && (east_sign != 1 || east_sign != 0))
-                {
-                    //wrong values
-                    return 1;
-                }
+                // if ((west_sign != 1 || west_sign != 0) && (north_sign != 1 || north_sign != 0) && (east_sign != 1 || east_sign != 0))
+                // {
+                //     //wrong values
+                //     return 1;
+                // }
 
-                if (west_sign == 1)
-                {
-                    sign_tracker.turn_west(false);
-                }
-                else
-                {
-                    sign_tracker.turn_west(true);
-                }
+                // if (west_sign == 1)
+                // {
+                //     sign_tracker.turn_west(false);
+                // }
+                // else
+                // {
+                //     sign_tracker.turn_west(true);
+                // }
 
-                if (north_sign == 1)
-                {
-                    sign_tracker.turn_north(false);
-                }
-                else
-                {
-                    sign_tracker.turn_north(true);
-                }
+                // if (north_sign == 1)
+                // {
+                //     sign_tracker.turn_north(false);
+                // }
+                // else
+                // {
+                //     sign_tracker.turn_north(true);
+                // }
 
-                if (east_sign == 1)
-                {
-                    sign_tracker.turn_east(false);
-                }
-                else
-                {
-                    sign_tracker.turn_west(true);
-                }
+                // if (east_sign == 1)
+                // {
+                //     sign_tracker.turn_east(false);
+                // }
+                // else
+                // {
+                //     sign_tracker.turn_west(true);
+                // }
 
-                carlos_session.send(sign_tracker);
-                std::this_thread::sleep_for(timer);
+                // carlos_session.send(sign_tracker);
+                // std::this_thread::sleep_for(timer);
             }
             if (userInp == 2)
             { /** stage 2

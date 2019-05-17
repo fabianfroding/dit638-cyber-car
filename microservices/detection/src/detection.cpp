@@ -112,6 +112,11 @@ int32_t main(int32_t argc, char **argv)
 	  // Variables to get average stop signs detected of every fifth frame.
 	  float framesCounted = 0;
       float objectsCounted = 0;
+      // Variables to get average green colors detected in west, north and east frames for every fifth frame.
+      float framesCountedColor = 0;
+      float colorsCountedWest = 0;
+      float colorsCountedNorth = 0;
+      float colorsCountedEast = 0;
       // Endless loop; end the program by pressing Ctrl-C.
       while (carlos_session.isRunning() || kiwi_session.isRunning())
       {
@@ -202,11 +207,32 @@ int32_t main(int32_t argc, char **argv)
             drawRectangle(car_rectangle[k], resizedImg, edge);
           }
             cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
-            //send intersection message
-            intersection_tracker.west(westCar);
-            intersection_tracker.north(northCar);
-            intersection_tracker.east(eastCar);
-            carlos_session.send(intersection_tracker);
+            
+            //==================== GET AVERAGE OF COLORS DETECTED (5th frame)
+            colorsCountedWest += (double)westCar;
+            colorsCountedNorth += (double)northCar;
+            colorsCountedEast += (double)eastCar;
+			framesCountedColor++;
+            if (framesCountedColor >= 5) {
+				int avgCarsWest = int((colorsCountedWest / 5) + 0.5);
+				int avgCarsNorth = int((colorsCountedNorth / 5) + 0.5);
+				int avgCarsEast = int((colorsCountedEast / 5) + 0.5);
+				cout << "Avg cars west: " << avgCarsWest << endl;
+				cout << "Avg cars north: " << avgCarsNorth << endl;
+				cout << "Avg cars east: " << avgCarsEast << endl;
+				framesCountedColor = 0;
+				colorsCountedWest = 0;
+				colorsCountedNorth = 0;
+				colorsCountedEast = 0;
+				
+				//send intersection message
+		        intersection_tracker.west(avgCarsWest);
+		        intersection_tracker.north(avgCarsNorth);
+		        intersection_tracker.east(avgCarsEast);
+		        carlos_session.send(intersection_tracker);
+			}
+			
+			//====================
 
         //message sending stopped
         // Display image.

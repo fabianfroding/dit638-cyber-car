@@ -62,17 +62,12 @@ int32_t main(int32_t argc, char **argv)
             /*store data*/
             SEMAPHORE = msg.semaphore();
             STAGE = msg.stage();
-
-            if (!SEMAPHORE)
-            {
-                opendlv::proxy::PedalPositionRequest pedal; //kiwi
-                pedal.position(0);
-                kiwi_session.send(pedal);
-            }
         };
 
         opendlv::proxy::PedalPositionRequest pedal; //kiwi
-        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal](cluon::data::Envelope &&envelope) {
+        int16_t count = 0;
+        float sensor_values[3] = {0, 0, 0};
+        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal, &count, &sensor_values, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -87,25 +82,39 @@ int32_t main(int32_t argc, char **argv)
             {
                 if (STAGE != 2)
                 {
-                    if (sensor < SAFE_DISTANCE)
+                    if (count == 2)
                     {
-                        SPEED = 0;
-                        pedal.position(SPEED);
-
-                        if (VERBOSE)
+                        int16_t sensor_average = (sensor_values[0] + sensor_values[1] + sensor_values[2]) / 3;
+                        count = 0;
+                        if (sensor_average < SAFE_DISTANCE)
                         {
-                            std::cout << "STAGE(" + std::to_string(STAGE) + "):Object Detected at [" << sensor << "]" << std::endl;
+                            SPEED = 0;
+                            pedal.position(SPEED);
+
+                            if (VERBOSE)
+                            {
+                                std::cout << "STAGE(" + std::to_string(STAGE) + "):Object Detected at [" << sensor_average << "]" << std::endl;
+                            }
+                        }
+                        else
+                        {
+                            SPEED = USER_SPEED;
+                            pedal.position(SPEED);
+
+                            if (VERBOSE)
+                            {
+                                std::cout << "STAGE(" + std::to_string(STAGE) + "):Sent move instructions at speed [" << SPEED << "]" << std::endl;
+                            }
+                        }
+                        if (SEMAPHORE && (SPEED != PREV_SPEED))
+                        {
+                            kiwi_session.send(pedal);
                         }
                     }
                     else
                     {
-                        SPEED = USER_SPEED;
-                        pedal.position(SPEED);
-
-                        if (VERBOSE)
-                        {
-                            std::cout << "STAGE(" + std::to_string(STAGE) + "):Sent move instructions at speed [" << SPEED << "]" << std::endl;
-                        }
+                        sensor_values[count] = sensor;
+                        count = count + 1;
                     }
                 }
                 else
@@ -148,10 +157,10 @@ int32_t main(int32_t argc, char **argv)
         while (kiwi_session.isRunning())
         {
             /* just run this microservice until ist crashes */
-            if (SEMAPHORE && (SPEED != PREV_SPEED))
-            {
-                kiwi_session.send(pedal);
-            }
+            // if (SEMAPHORE && (SPEED != PREV_SPEED))
+            // {
+            //     kiwi_session.send(pedal);
+            // }
         }
     }
     else

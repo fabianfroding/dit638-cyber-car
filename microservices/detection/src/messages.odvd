@@ -1,45 +1,3 @@
-/**
- * Copyright (C) Carlos, the car
- * This software was created by students at the software engineering and management class of 2020
- * and should be distributed at YOUR OWN RISK.
-*/
-
-message carlos.acc [id = 3000]{
-  bool safe_to_drive [id = 1];
-}
-
-message carlos.vision.car [id = 3001]{
-  float coc [id = 1];
-  float area [id = 2];
-  uint16 queue [id = 3];
-}
-
-message carlos.vision.sign [id = 3002]{
-  uint16 type [id = 1];
-  float area [id = 2];
-  float cos [id=3];
-}
-
-message carlos.command [id = 3003]{
-  float turn_type [id = 1];
-}
-
-message carlos.semaphore.acc [id = 3004]{
-  bool semaphore [id = 1];
-}
-
-message carlos.semaphore.cmd [id = 3005]{
-  bool semaphore [id = 1];
-}
-
-message carlos.semaphore.vision.color [id = 3006]{
-  bool semaphore [id = 1];
-}
-
-message carlos.semaphore.vision.object [id = 3007]{
-  bool semaphore [id = 1];
-}
-
 /*
  * Copyright (C) 2018 Chalmers Revere
  *
@@ -301,7 +259,7 @@ message opendlv.system.NetworkStatusMessage [id = 1102] {
 }
 
 message opendlv.system.LogMessage [id = 1103] {
-  uint8 level [default = 6, id = 1]; // based on syslog: 0 = Emergency, 1 = Alert, 2 = Critical, 3 = Error, 4 = Warning, 5 = Notice, 6 = Informational, 7 = Debug   
+  uint8 level [default = 6, id = 1]; // based on syslog: 0 = Emergency, 1 = Alert, 2 = Critical, 3 = Error, 4 = Warning, 5 = Notice, 6 = Informational, 7 = Debug
   string description [id = 2];
 }
 
@@ -332,8 +290,6 @@ message opendlv.logic.sensation.Equilibrioception [id = 1017] {
   float pitchRate [id = 5];
   float yawRate [id = 6];
 }
-
-
 
 message opendlv.logic.perception.Object [id = 1130] {
   uint32 objectId [id = 1];

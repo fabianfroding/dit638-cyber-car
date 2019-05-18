@@ -265,7 +265,9 @@ int32_t main(int32_t argc, char **argv)
       	// TO DO:
       	// Check frames for north and east car IF THEY WERE PRESENT IN STAGE 1.
       	
-      	framesCountedColor = 0; // Reset from usage in stage 1.
+      	float framesCountedColor = 0;
+		float colorsCountedNorth = 0;
+		float colorsCountedEast = 0;
       	
       	// This section is almost identical to the one in stage 1, except it doesnt look for the car in west.
       	while (carlos_session.isRunning() || kiwi_session.isRunning())
@@ -344,14 +346,17 @@ int32_t main(int32_t argc, char **argv)
 		    }
       	
       	// Here goes logic for the LEFT car.
+      	// How do we access the left infrared sensor here?
       	
       }
 
 	  
     }
   }
+  }
   return retCode;
 }
+  
 
 float carlos_converter(float num)
 {

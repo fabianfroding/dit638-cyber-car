@@ -35,16 +35,8 @@ RUN mkdir build && \
     make && make install
 
 
-FROM chrberger/cluon-amd64:latest
-MAINTAINER Christian Berger "christian.berger@gu.se"
-
-RUN echo http://dl-4.alpinelinux.org/alpine/v3.8/main > /etc/apk/repositories && \
-    echo http://dl-4.alpinelinux.org/alpine/v3.8/community >> /etc/apk/repositories && \
-    echo http://dl-4.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
-    apk update && \
-    apk --no-cache add \
-        opencv-libs \
-        libcanberra-gtk3
+    FROM gusgusal/image_fix:firsttry
+    MAINTAINER Albin Gustafson "gusgusal@student.gu.se"
 
 WORKDIR /usr/bin
 COPY --from=builder /tmp/bin/detection .

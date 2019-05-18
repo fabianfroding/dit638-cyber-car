@@ -22,6 +22,7 @@ message carlos.cmd.turn_status [id = 3201]{
   bool east_turn [id=1];
   bool west_turn [id=2];
   bool north_turn [id=3];
+  bool complete [id=4];
 }
 
 message carlos.object.sign [id = 3301]{

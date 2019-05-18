@@ -66,8 +66,8 @@ int32_t main(int32_t argc, char **argv)
 
         opendlv::proxy::PedalPositionRequest pedal; //kiwi
         int16_t count = 0;
-        float sensor_values[5] = {0, 0, 0, 0, 0};
-        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, SEMAPHORE, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal, &count, &sensor_values, &kiwi_session](cluon::data::Envelope &&envelope) {
+        float sensor_total = 0;
+        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, SEMAPHORE, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -85,7 +85,7 @@ int32_t main(int32_t argc, char **argv)
                     if (count == 4)
                     {
                         count = 0;
-                        int16_t sensor_average = (sensor_values[0] + sensor_values[1] + sensor_values[2] + sensor_values[3] + sensor_values[4]) / 5;
+                        float sensor_average = sensor_total / 5;
                         if (sensor_average < SAFE_DISTANCE)
                         {
                             SPEED = 0;
@@ -110,10 +110,14 @@ int32_t main(int32_t argc, char **argv)
                         {
                             kiwi_session.send(pedal);
                         }
+
+                        collision_status.collision_warning((sensor_average < SAFE_DISTANCE) ? true : false);
+                        carlos_session.send(collision_status);
+                        PREV_SPEED = SPEED;
                     }
                     else
                     {
-                        sensor_values[count] = sensor;
+                        sensor_total = sensor_total + sensor;
                         count = count + 1;
                     }
                 }
@@ -123,16 +127,23 @@ int32_t main(int32_t argc, char **argv)
                     if (sensor < INTERSECTION)
                     {
                         trigger.front_sensor(true);
+
+                        if (VERBOSE)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Front Sensor[True]" << std::endl;
+                        }
                     }
                     else
                     {
                         trigger.front_sensor(false);
+
+                        if (VERBOSE)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Front Sensor[False]" << std::endl;
+                        }
                     }
                     carlos_session.send(trigger);
                 }
-                collision_status.collision_warning((sensor < SAFE_DISTANCE) ? true : false);
-                carlos_session.send(collision_status);
-                PREV_SPEED = SPEED;
             }
 
             if ((senderStamp == left_sensor) && STAGE == 2)
@@ -141,10 +152,20 @@ int32_t main(int32_t argc, char **argv)
                 if (sensor < INTERSECTION)
                 {
                     trigger.left_sensor(true);
+
+                    if (VERBOSE)
+                    {
+                        std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Left Sensor[True]" << std::endl;
+                    }
                 }
                 else
                 {
                     trigger.left_sensor(false);
+
+                    if (VERBOSE)
+                    {
+                        std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Left Sensor[False]" << std::endl;
+                    }
                 }
                 carlos_session.send(trigger);
             }
@@ -156,11 +177,7 @@ int32_t main(int32_t argc, char **argv)
 
         while (kiwi_session.isRunning())
         {
-            /* just run this microservice until ist crashes */
-            // if (SEMAPHORE && (SPEED != PREV_SPEED))
-            // {
-            //     kiwi_session.send(pedal);
-            // }
+            //keep running
         }
     }
     else

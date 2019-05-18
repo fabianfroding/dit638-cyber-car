@@ -30,30 +30,33 @@ int32_t main(int32_t argc, char **argv)
 {
   CommandLineParser parser(argc, argv,
                            "{help h||}"
-                           "{car_cascade|./cascade.xml|Path to car cascade.}"
+                           "{stopSigns_cascade|./cascade.xml|Path to car cascade.}"
                            "{camera|0|Camera device number.}");
 
   //**VARIABLES**//
   int32_t retCode{1};
+  float framesCounted=0, objectsCounted=0;
   bool stopSignPresent=false, stopSignDetected=false, westCar=false, northCar=true, eastCar=false;
-  String car_cascade_name;
-  CascadeClassifier car_cascade;
+  uint16_t status=0;
+  String stopSigns_cascade_name;
+  CascadeClassifier stopSigns_cascade;
   vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
-  vector<Rect> car_rectangle, stop_rectangle;
+  vector<Rect> car_rectangle, stop_rectangle, stopSigns;
   vector<Vec4i> car_hierarchy, stop_hierarchy;
   Rect temp, empty;
   Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2,resizedImg2;
   Scalar edge = Scalar(255, 255, 255);
 
   //car sticker colors
-  double car_low_H = 40, car_high_H = 94, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
+  double car_low_H = 40, car_high_H = 90, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
   Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
   //**END VARIABLES**//
 
-  car_cascade_name = parser.get<String>("car_cascade");
-  if (!car_cascade.load(car_cascade_name)) {
-      cout << "--(!)Error loading car cascade\n";
-      return -1;
+  stopSigns_cascade_name = parser.get<String>("stopSigns_cascade");
+  if (!stopSigns_cascade.load(stopSigns_cascade_name))
+  {
+    cout << "--(!)Error loading car cascade\n";
+    return -1;
   };
 
   auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
@@ -107,6 +110,9 @@ int32_t main(int32_t argc, char **argv)
       /*registered callback*/
       carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
 
+  	  // Variables to get average stop signs detected of every fifth frame.
+  	  framesCounted = 0;
+      objectsCounted = 0;
       // Endless loop; end the program by pressing Ctrl-C.
       while (carlos_session.isRunning() || kiwi_session.isRunning())
       {
@@ -120,9 +126,9 @@ int32_t main(int32_t argc, char **argv)
           // the camera to provide the next frame. Thus, any
           // computationally heavy algorithms should be placed outside
           // lock/unlock.
-          Mat wrapped(HEIGHT - 60, WIDTH, CV_8UC4, sharedMemory->data());
+          Mat wrapped(HEIGHT - 110, WIDTH, CV_8UC4, sharedMemory->data());
           img = wrapped.clone();
-          img2= wrapped.clone();
+          img2 = wrapped.clone();
         }
         sharedMemory->unlock();
 
@@ -132,76 +138,82 @@ int32_t main(int32_t argc, char **argv)
         cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
         cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
         equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
-        vector<Rect> cars;
-        car_cascade.detectMultiScale(obj_frame, cars);
-        //make an ellipse around the detected stop signs
-        if(cars.size()!=0){
-          for (size_t i = 0; i < cars.size(); i++) {
-              Point center(cars[i].x + cars[i].width/2, cars[i].y + cars[i].height/2);
-              ellipse(resizedImg, center, Size(cars[i].width/2, cars[i].height/2), 0, 0, 360, Scalar(255, 0, 255), 4);
-          }
-        }
-        if(stopSignPresent==true && cars.size()==0) {
-          stopSignPresent=false;
-          stopSignDetected=true;
-        }
-        else if(cars.size()>0) {
-          stopSignPresent=true;
-          stopSignDetected=true;
-        }
-        signStatus.detected(stopSignPresent);
-        signStatus.reached(stopSignDetected);
-        carlos_session.send(signStatus);
 
-        //cout<<"Stop sign present: "<<stopSignPresent<<"| detected: "<<stopSignDetected<<flush<<endl;
+        //==============================
+		    // OBJECT DETECTION
+		    //==============================
+        stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
+        size_t nStopSigns = stopSigns.size();
+        objectsCounted += (double)nStopSigns;
+		    framesCounted++;
+
+    		if (nStopSigns != 0) {
+    	      for (size_t i = 0; i < nStopSigns; i++) {
+    	        Point center(stopSigns[i].x + stopSigns[i].width / 2, stopSigns[i].y + stopSigns[i].height / 2);
+    	        ellipse(resizedImg, center, Size(stopSigns[i].width / 2, stopSigns[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+    	      }
+    		}
+
+    		if (framesCounted >= 5) {
+    			int avgObjects = int((objectsCounted / 5) + 0.5);
+    			cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
+    			framesCounted = 0;
+    			objectsCounted = 0;
+
+    		    stopSignPresent = (0 < avgObjects) ? true : false;
+    	    	if (stopSignPresent) {
+    	    		stopSignDetected = true;
+    	    	}
+    	    	if (stopSignPresent && stopSignDetected) {
+    	    		signStatus.detected(true);
+    	    		signStatus.reached(false);
+    	    	} else if (!stopSignPresent && stopSignDetected) {
+    	    		signStatus.detected(false);
+    	    		signStatus.reached(true);
+    	    	}
+    	    	if (stopSignDetected) {
+    	    		carlos_session.send(signStatus);
+    	    	}
+    		}
+        cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
+        //==============================
+
         car_contours = getContours(img_hsv, car_low, car_high);
         car_polygons.resize(car_contours.size());
         car_rectangle.resize(car_contours.size());
 
         //**PROCESS CAR GREEN DETECTION**
-        if (car_contours.size() > 0)
+        eastCar=false; northCar=false; westCar=false;
           for (size_t k = 0; k < car_contours.size(); k++)
           {
             approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-            if (arcLength(car_contours[k], false) > 120)
+            if (arcLength(car_contours[k], false) > 60)
             {
               car_rectangle[k] = boundingRect(car_polygons[k]);
               //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
-              if(getPercentageOfWidth(car_contours[k],resizedImg) < resizedImg.size().width/100*30) westCar=true;
-              else westCar=false;
-              if(getPercentageOfWidth(car_contours[k],resizedImg) >= resizedImg.size().width/100*30 && getPercentageOfWidth(car_contours[k],resizedImg) <= resizedImg.size().width/100*65) northCar=true;
-              else northCar=false;
-              if(getPercentageOfWidth(car_contours[k],resizedImg) > resizedImg.size().width/100*65) eastCar=true;
-              else eastCar=false;
+              if(getCenterOfContour(car_contours[k]).x < resizedImg.size().width/100*30) westCar=true;
+              //else westCar=false;
+              if(getCenterOfContour(car_contours[k]).x >= resizedImg.size().width/100*30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width/100*65) northCar=true;
+              //else northCar=false;
+              if(getCenterOfContour(car_contours[k]).x > resizedImg.size().width/100*65) eastCar=true;
+              //else eastCar=false;
             }
-            else {westCar=false; eastCar=false; northCar=false;}
-            groupRectangles(car_rectangle, 1, 0.7); //group overlapping rectangles
-            cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
+            groupRectangles(car_rectangle, 3, 0.65); //group overlapping rectangles
             drawRectangle(car_rectangle[k], resizedImg, edge);
-
-            //create the envelope containing this data
-            wheel.groundSteering(carlos_converter(getPercentageOfWidth(car_contours[k], resizedImg)));
-            if (SEMAPHORE)
-            {
-              kiwi_session.send(wheel); //send to car
-            }
-            //send messages
-            lead_car.coc(getPercentageOfWidth(car_contours[k], resizedImg)); //center of car
-            lead_car.area(car_rectangle[k].area()); //area
-            carlos_session.send(lead_car); //send the message to the delegator
+          }
+            cout <<westCar<<" | "<<northCar<<" | "<<eastCar<<flush<<endl;
             //send intersection message
             intersection_tracker.west(westCar);
             intersection_tracker.north(northCar);
             intersection_tracker.east(eastCar);
             carlos_session.send(intersection_tracker);
-          }
 
         //message sending stopped
         // Display image.
         if (VERBOSE)
         {
           imshow(sharedMemory->name().c_str(), resizedImg);
-        //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
+          //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
           waitKey(1);
         }
       }

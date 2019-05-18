@@ -213,17 +213,17 @@ int32_t main(int32_t argc, char **argv)
             colorsCountedNorth += (double)northCar;
             colorsCountedEast += (double)eastCar;
 			framesCountedColor++;
-            if (framesCountedColor >= 5) {
+            if (framesCountedColor == 5) {
 				int avgCarsWest = int((colorsCountedWest / 5) + 0.5);
 				int avgCarsNorth = int((colorsCountedNorth / 5) + 0.5);
 				int avgCarsEast = int((colorsCountedEast / 5) + 0.5);
 				cout << "Avg cars west: " << avgCarsWest << endl;
 				cout << "Avg cars north: " << avgCarsNorth << endl;
 				cout << "Avg cars east: " << avgCarsEast << endl;
-				framesCountedColor = 0;
-				colorsCountedWest = 0;
-				colorsCountedNorth = 0;
-				colorsCountedEast = 0;
+				//framesCountedColor = 0;
+				//colorsCountedWest = 0;
+				//colorsCountedNorth = 0;
+				//colorsCountedEast = 0;
 				
 				//send intersection message
 		        intersection_tracker.west(avgCarsWest);

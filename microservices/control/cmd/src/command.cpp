@@ -3,7 +3,6 @@
 */
 
 #include <cstdint>
-#include <chrono>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -20,7 +19,6 @@ int32_t main(int32_t argc, char **argv)
     if (0 != commandlineArguments.count("help"))
     {
         std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
-        std::cerr << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
         std::cerr << argv[0] << "[--cid=<ID of KIWI session>]" << std::endl;
         std::cerr << argv[0] << "[--turn=<turn angle>]" << std::endl;
         std::cerr << argv[0] << "[--speed=<turn speed>]" << std::endl;
@@ -89,7 +87,7 @@ int32_t main(int32_t argc, char **argv)
 
         while (kiwi_session.isRunning())
         {
-            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
+            std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
 
             if (STAGE == 3 || DEBUG)
             {
@@ -106,6 +104,26 @@ int32_t main(int32_t argc, char **argv)
 
                 switch (userInp)
                 {
+
+                case 0:
+                    std::cout << "manual control" << std::endl;
+                    //turn wheel
+                    wheel.groundSteering(TURN);
+                    kiwi_session.send(wheel);
+                    //speed
+                    pedal.position(SPEED);
+                    kiwi_session.send(pedal);
+                    //delay
+                    sleep(DELAY);
+                    //stop vehicle
+                    pedal.position(0);
+                    kiwi_session.send(pedal);
+                    //straighten wheel
+                    wheel.groundSteering(0);
+                    kiwi_session.send(wheel);
+
+                    break;
+
                 case 9:
                     if (turn_west)
                     {
@@ -237,7 +255,6 @@ int32_t main(int32_t argc, char **argv)
             }
             else
             {
-                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + ")[dissengaged]" << std::endl;
             }
         }
     }

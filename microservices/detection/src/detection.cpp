@@ -36,7 +36,7 @@ int32_t main(int32_t argc, char **argv)
     //**VARIABLES**//
     int32_t retCode{1};
     bool stopSignPresent = false, stopSignDetected = false, westCar = false, northCar = true, eastCar = false;
-    uint16_t stage = 0; //uint16_t status=0;
+    uint16_t stage = 1; //uint16_t status=0;
     String stopSigns_cascade_name;
     CascadeClassifier stopSigns_cascade;
     vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
@@ -153,6 +153,7 @@ int32_t main(int32_t argc, char **argv)
                 // CHECK STAGES
                 //==============================
 
+                cout<<"Stage "<<stage<<endl<<flush;
                 //==================== CODE FOR STAGE 1
                 if (stage == 1)
                 {
@@ -201,7 +202,7 @@ int32_t main(int32_t argc, char **argv)
                             carlos_session.send(signStatus);
                         }
                     }
-                    cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
+                    //cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
                     //==============================
 
                     car_contours = getContours(img_hsv, car_low, car_high);
@@ -215,7 +216,7 @@ int32_t main(int32_t argc, char **argv)
                     for (size_t k = 0; k < car_contours.size(); k++)
                     {
                         approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
-                        if (arcLength(car_contours[k], false) > 60)
+                        if (arcLength(car_contours[k], false) > 40)
                         {
                             car_rectangle[k] = boundingRect(car_polygons[k]);
                             //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
@@ -271,7 +272,7 @@ int32_t main(int32_t argc, char **argv)
                     car_contours = getContours(img_hsv, car_low, car_high);
                     car_polygons.resize(car_contours.size());
                     car_rectangle.resize(car_contours.size());
-					
+
                     //**PROCESS CAR GREEN DETECTION**
                     eastCar = false;
                     northCar = false;
@@ -322,13 +323,13 @@ int32_t main(int32_t argc, char **argv)
                         avgCarsEast = 0;
                     }
                 }
-            }
 
-            if (VERBOSE)
-            {
-                imshow(sharedMemory->name().c_str(), resizedImg);
-                //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
-                waitKey(1);
+                if (VERBOSE)
+                {
+                    imshow(sharedMemory->name().c_str(), resizedImg);
+                    //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
+                    waitKey(1);
+                }
             }
         }
     }
@@ -406,7 +407,7 @@ vector<vector<Point>> getContours(Mat hsvImage, Scalar color_low, Scalar color_h
     Mat blur, frame_threshold, detected_edges;
     vector<Vec4i> hierarchy;
     vector<vector<Point>> contours;
-    medianBlur(hsvImage, blur, 11);
+    medianBlur(hsvImage, blur, 13);
     inRange(blur, Scalar(color_low), Scalar(color_high), frame_threshold);
     Canny(frame_threshold, detected_edges, 0, 0, 5, false);
     findContours(detected_edges, contours, hierarchy, RETR_TREE, CHAIN_APPROX_NONE, Point(0, 0));

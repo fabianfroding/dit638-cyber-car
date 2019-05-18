@@ -9,11 +9,6 @@ message carlos.status [id = 3000]{
   uint16 stage [id = 2];
 }
 
-message carlos.acc.status [id = 3100]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
-}
-
 message carlos.acc.collision [id = 3101]{
   bool collision_warning [id = 1];
 }
@@ -23,20 +18,10 @@ message carlos.acc.trigger [id = 3102]{
   bool left_sensor [id = 2];
 }
 
-message carlos.cmd.status [id = 3200]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
-}
-
 message carlos.cmd.turn_status [id = 3201]{
   bool east_turn [id=1];
   bool west_turn [id=2];
   bool north_turn [id=3];
-}
-
-message carlos.object.status [id = 3300]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
 }
 
 message carlos.object.sign [id = 3301]{
@@ -45,11 +30,6 @@ message carlos.object.sign [id = 3301]{
   bool turn_west [id = 3];
   bool turn_north [id = 4];
   bool turn_east [id = 5]; 
-}
-
-message carlos.color.status [id = 3400]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
 }
 
 message carlos.color.lead_car [id = 3401]{

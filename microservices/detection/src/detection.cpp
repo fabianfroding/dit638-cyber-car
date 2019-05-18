@@ -94,7 +94,7 @@ int32_t main(int32_t argc, char **argv)
             opendlv::proxy::GroundSteeringRequest wheel;
             carlos::color::lead_car lead_car;
             carlos::color::intersection intersection_tracker;
-            carlos::color::status status;
+            carlos::status status;
             carlos::object::sign signStatus;
             // carlos::vision::sign sign_tracker;
 
@@ -102,13 +102,13 @@ int32_t main(int32_t argc, char **argv)
 
             /*prepared callback*/
             auto semaphore = [VERBOSE, &SEMAPHORE](cluon::data::Envelope &&envelope) {
-                /** unpack message recieved*/
-                auto msg = cluon::extractMessage<carlos::color::status>(std::move(envelope));
-                /*store data*/
-                SEMAPHORE = msg.semaphore();
+              /** unpack message recieved*/
+              auto msg = cluon::extractMessage<carlos::status>(std::move(envelope));
+              /*store data*/
+              SEMAPHORE = msg.semaphore();
             };
             /*registered callback*/
-            carlos_session.dataTrigger(carlos::color::status::ID(), semaphore);
+            carlos_session.dataTrigger(carlos::status::ID(), semaphore);
 
             double colorsCountedWest = 0;
             double colorsCountedNorth = 0;

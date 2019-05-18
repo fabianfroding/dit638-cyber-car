@@ -20,12 +20,11 @@ int32_t main(int32_t argc, char **argv)
 
     if (0 != commandlineArguments.count("help"))
     {
-        std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
-        std::cerr << "Usage:" << argv[0] << " --cid=<CID of your OD4Session>" << std::endl;
-        std::cerr << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
-        std::cerr << argv[0] << "[--sd=<front/back safety space>]" << std::endl;
-        std::cerr << argv[0] << "[--sp=<speed, min is 0.13 and max is 0.8>]" << std::endl;
-        std::cerr << argv[0] << "[--trig=<trigger distance>]" << std::endl;
+        std::cerr << "Usage:" << argv[0] << "[--cid=<int>] CID of your OD4Session" << std::endl;
+        std::cerr << argv[0] << "[--carlos=<int>] ID of carlos microservices" << std::endl;
+        std::cerr << argv[0] << "[--sd=<float>] safety distance for vehicle" << std::endl;
+        std::cerr << argv[0] << "[--sp=<float, min is 0.13 and max is 0.8>]" << std::endl;
+        std::cerr << argv[0] << "[--trig=<float>] tirgger distance for vehicle at intersection" << std::endl;
         std::cerr << argv[0] << "[--verbose]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << " --cid=112 --carlos=113 --verbose --sd=0.2 --sp=013" << std::endl;

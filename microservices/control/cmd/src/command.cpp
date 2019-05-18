@@ -20,8 +20,8 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cerr << argv[0] << " is an example application for miniature vehicles (Kiwis) of DIT638 course." << std::endl;
         std::cerr << argv[0] << "[--cid=<ID of KIWI session>]" << std::endl;
-        std::cerr << argv[0] << "[--turn=<turn angle>]" << std::endl;
-        std::cerr << argv[0] << "[--speed=<turn speed>]" << std::endl;
+        std::cerr << argv[0] << "[--turn=<float>] turn angle for vehicle" << std::endl;
+        std::cerr << argv[0] << "[--speed=<float, min is 0.13 and max is 0.8>] speed for vehicle" << std::endl;
         std::cerr << argv[0] << "[--verbose] print information" << std::endl;
         std::cerr << argv[0] << "[--debug] configure turns" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;

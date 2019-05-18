@@ -23,9 +23,9 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << "Usage:" << argv[0] << "[--carlos=<ID of carlos microservices>]" << std::endl;
         std::cerr << argv[0] << "[--verbose] see EVERYTHING" << std::endl;
         std::cerr << argv[0] << "[--acc] filter the acc messages" << std::endl;
-        std::cerr << argv[0] << "[--cmd] filter the acc messages" << std::endl;
-        std::cerr << argv[0] << "[--color] filter the acc messages" << std::endl;
-        std::cerr << argv[0] << "[--sign] filter the acc messages" << std::endl;
+        std::cerr << argv[0] << "[--cmd] filter the cmd messages" << std::endl;
+        std::cerr << argv[0] << "[--color] filter the color detection messages" << std::endl;
+        std::cerr << argv[0] << "[--sign] filter the object detection messages" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--verbose --sign" << std::endl;
         return -1;

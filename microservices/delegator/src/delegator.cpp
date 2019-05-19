@@ -176,11 +176,6 @@ int32_t main(int32_t argc, char **argv)
                 east = msg.east();
             }
 
-            if ((west == false && north == false && east == false) && STAGE == 2)
-            {
-                STAGE = 3;
-            }
-
             if (VERBOSE || COLOR)
             {
                 std::cout << "inbox->color(" + std::to_string(STAGE) + ")[west=(" + std::to_string(west) + "), north=(" + std::to_string(north) + "), east=(" + std::to_string(east) + ")]" << std::endl;

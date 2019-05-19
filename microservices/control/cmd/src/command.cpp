@@ -23,6 +23,7 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--turn=<float>] turn angle for vehicle" << std::endl;
         std::cerr << argv[0] << "[--speed=<float, min is 0.13 and max is 0.8>] speed for vehicle" << std::endl;
         std::cerr << argv[0] << "[--verbose] print information" << std::endl;
+        std::cerr << argv[0] << "[--delay] delatys for each instruction" << std::endl;
         std::cerr << argv[0] << "[--debug] configure turns" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--cid=112 --carlos=113 --verbose" << std::endl;
@@ -31,8 +32,8 @@ int32_t main(int32_t argc, char **argv)
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const float TURN{(commandlineArguments.count("turn") != 0) ? static_cast<float>(std::stof(commandlineArguments["turn"])) : static_cast<float>(0.2)};
-    const float SPEED{(commandlineArguments.count("speed") != 0) ? static_cast<float>(std::stof(commandlineArguments["speed"])) : static_cast<float>(0.15)};
-    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(3)};
+    const float SPEED{(commandlineArguments.count("speed") != 0) ? static_cast<float>(std::stof(commandlineArguments["speed"])) : static_cast<float>(0.14)};
+    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(3000)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
     const bool DEBUG{commandlineArguments.count("debug") != 0};
 
@@ -84,6 +85,7 @@ int32_t main(int32_t argc, char **argv)
         opendlv::proxy::PedalPositionRequest pedal;  //[car] pedal position
         carlos::cmd::turn_status intersection_turn_status;
         uint16_t userInp = 0;
+        std::chrono::milliseconds timer(DELAY);
 
         while (kiwi_session.isRunning())
         {
@@ -104,26 +106,6 @@ int32_t main(int32_t argc, char **argv)
 
                 switch (userInp)
                 {
-
-                case 0:
-                    std::cout << "manual control" << std::endl;
-                    //turn wheel
-                    wheel.groundSteering(TURN);
-                    kiwi_session.send(wheel);
-                    //speed
-                    pedal.position(SPEED);
-                    kiwi_session.send(pedal);
-                    //delay
-                    sleep(DELAY);
-                    //stop vehicle
-                    pedal.position(0);
-                    kiwi_session.send(pedal);
-                    //straighten wheel
-                    wheel.groundSteering(0);
-                    kiwi_session.send(wheel);
-
-                    break;
-
                 case 9:
                     if (turn_west)
                     {
@@ -142,8 +124,6 @@ int32_t main(int32_t argc, char **argv)
                             kiwi_session.send(pedal);
                         }
 
-                        //delay
-                        std::chrono::milliseconds timer(DELAY);
                         std::this_thread::sleep_for(timer);
 
                         //stop vehicle
@@ -184,7 +164,6 @@ int32_t main(int32_t argc, char **argv)
                         }
 
                         //delay
-                        std::chrono::milliseconds timer(DELAY);
                         std::this_thread::sleep_for(timer);
 
                         //stop vehicle
@@ -226,7 +205,6 @@ int32_t main(int32_t argc, char **argv)
                         }
 
                         //delay
-                        std::chrono::milliseconds timer(DELAY);
                         std::this_thread::sleep_for(timer);
 
                         //stop vehicle

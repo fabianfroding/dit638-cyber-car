@@ -25,17 +25,26 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--sd=<float>] safety distance for vehicle" << std::endl;
         std::cerr << argv[0] << "[--sp=<float, min is 0.13 and max is 0.8>]" << std::endl;
         std::cerr << argv[0] << "[--trig=<float>] tirgger distance for vehicle at intersection" << std::endl;
+        std::cerr << argv[0] << "[--debug] show more information on addaptive cruise control" << std::endl;
         std::cerr << argv[0] << "[--verbose]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << " --cid=112 --carlos=113 --verbose --sd=0.2 --sp=013" << std::endl;
         return -1;
     }
+
     const uint16_t CARLOS_SESSION{(commandlineArguments.count("carlos") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["carlos"])) : static_cast<uint16_t>(113)};
     const uint16_t CID{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
+    const bool DEBUG{commandlineArguments.count("debug") != 0};
     const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.30)};
     const float USER_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
     const float INTERSECTION{(commandlineArguments.count("trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["trig"])) : static_cast<float>(0.15)};
+
+    if (SAFE_DISTANCE < 0 || USER_SPEED < 0 || USER_SPEED > 0.5)
+    {
+        std::cerr << "Error: the values you added to the --sp or --sd arguments were out of range" << std::endl;
+        return -1;
+    }
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
     std::cout << "speed: [" << USER_SPEED << "], front saftey distance: [" << SAFE_DISTANCE << " meters]" << std::endl;
@@ -52,7 +61,7 @@ int32_t main(int32_t argc, char **argv)
 
         bool SEMAPHORE = true;
         int16_t STAGE = 0;
-        float SPEED = 0, PREV_SPEED = SPEED;
+        float SPEED = 0;
 
         /*callbacks*/
         auto get_status = [&SEMAPHORE, &STAGE](cluon::data::Envelope &&envelope) {
@@ -66,7 +75,7 @@ int32_t main(int32_t argc, char **argv)
         opendlv::proxy::PedalPositionRequest pedal; //kiwi
         int16_t count = 0;
         float sensor_total = 0;
-        auto get_sensor_information = [VERBOSE, SAFE_DISTANCE, USER_SPEED, INTERSECTION, SEMAPHORE, &carlos_session, &SPEED, &PREV_SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
+        auto get_sensor_information = [VERBOSE, DEBUG, SAFE_DISTANCE, USER_SPEED, INTERSECTION, SEMAPHORE, &carlos_session, &SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -77,14 +86,19 @@ int32_t main(int32_t argc, char **argv)
             carlos::acc::collision collision_status; //carlos
             carlos::acc::trigger trigger;            //carlos
 
-            if (senderStamp == front_sensor)
+            if (STAGE != 2)
             {
-                if (STAGE != 2)
+                if (senderStamp == front_sensor)
                 {
-                    if (count == 4)
+                    if (count == 3)
                     {
-                        count = 0;
-                        float sensor_average = sensor_total / 5;
+                        float sensor_average = sensor_total / 4.0;
+
+                        if (DEBUG)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Calculating Sensor data -> average sensor data [" << sensor_average << "], total sensor data[" << sensor_total << "] count = " << count << std::endl;
+                        }
+
                         if (sensor_average < SAFE_DISTANCE)
                         {
                             SPEED = 0;
@@ -105,22 +119,41 @@ int32_t main(int32_t argc, char **argv)
                                 std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Sent move instructions at speed [" << SPEED << "]" << std::endl;
                             }
                         }
-                        if (SEMAPHORE && (SPEED != PREV_SPEED))
+
+                        if (SEMAPHORE)
                         {
                             kiwi_session.send(pedal);
                         }
 
+                        //send collsion data
                         collision_status.collision_warning((sensor_average < SAFE_DISTANCE) ? true : false);
                         carlos_session.send(collision_status);
-                        PREV_SPEED = SPEED;
+
+                        //reset sensor variables
+                        count = 0;
+                        sensor_total = 0;
                     }
                     else
                     {
                         sensor_total = sensor_total + sensor;
+                        if (DEBUG)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Collecting Sensor data -> sensor[" << sensor << "], total sensor data[" << sensor_total << "] count = " << count << std::endl;
+                        }
                         count = count + 1;
                     }
                 }
-                else
+            }
+            if (STAGE == 2)
+            {
+                SPEED = 0;
+                pedal.position(SPEED);
+                if (SEMAPHORE)
+                {
+                    kiwi_session.send(pedal);
+                }
+
+                if (senderStamp == front_sensor)
                 {
                     //intersection
                     if (sensor < INTERSECTION)
@@ -143,30 +176,29 @@ int32_t main(int32_t argc, char **argv)
                     }
                     carlos_session.send(trigger);
                 }
-            }
-
-            if ((senderStamp == left_sensor) && STAGE == 2)
-            {
-                //intersection
-                if (sensor < INTERSECTION)
+                if (senderStamp == left_sensor)
                 {
-                    trigger.left_sensor(true);
-
-                    if (VERBOSE)
+                    //intersection
+                    if (sensor < INTERSECTION)
                     {
-                        std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Left Sensor[True]" << std::endl;
-                    }
-                }
-                else
-                {
-                    trigger.left_sensor(false);
+                        trigger.left_sensor(true);
 
-                    if (VERBOSE)
-                    {
-                        std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Left Sensor[False]" << std::endl;
+                        if (VERBOSE)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Left Sensor[True]" << std::endl;
+                        }
                     }
+                    else
+                    {
+                        trigger.left_sensor(false);
+
+                        if (VERBOSE)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Left Sensor[False]" << std::endl;
+                        }
+                    }
+                    carlos_session.send(trigger);
                 }
-                carlos_session.send(trigger);
             }
         };
 

@@ -124,6 +124,7 @@ int32_t main(int32_t argc, char **argv)
                             kiwi_session.send(pedal);
                         }
 
+                        //delay
                         std::this_thread::sleep_for(timer);
 
                         //stop vehicle

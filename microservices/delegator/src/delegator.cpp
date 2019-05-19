@@ -26,6 +26,7 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--cmd] filter the cmd messages" << std::endl;
         std::cerr << argv[0] << "[--color] filter the color detection messages" << std::endl;
         std::cerr << argv[0] << "[--sign] filter the object detection messages" << std::endl;
+        std::cerr << argv[0] << "[--delay<int>] delay trigger response" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--verbose --sign" << std::endl;
         return -1;
@@ -36,6 +37,7 @@ int32_t main(int32_t argc, char **argv)
     const bool CMD{commandlineArguments.count("cmd") != 0};
     const bool COLOR{commandlineArguments.count("color") != 0};
     const bool SIGN{commandlineArguments.count("sign") != 0};
+    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(3000)};
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
 
@@ -55,7 +57,7 @@ int32_t main(int32_t argc, char **argv)
         services.stage(0);
 
         bool collision_warning = true; //acc service (collision)
-        auto acc_collision = [VERBOSE, ACC, STAGE, &carlos_session, &LOCK, &UNLOCK, &services, &collision_warning](cluon::data::Envelope &&envelope) {
+        auto acc_collision = [VERBOSE, ACC, &STAGE, &carlos_session, &LOCK, &UNLOCK, &services, &collision_warning](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::collision>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -74,7 +76,7 @@ int32_t main(int32_t argc, char **argv)
 
             if (VERBOSE || ACC)
             {
-                std::cout << "inbox->acc(" + std::to_string(STAGE) + ")[warning=" + std::to_string(collision_warning) + "]" << std::endl;
+                std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> acc[warning=" + std::to_string(collision_warning) + "]" << std::endl;
             }
         };
 
@@ -117,68 +119,71 @@ int32_t main(int32_t argc, char **argv)
 
             if (VERBOSE || SIGN)
             {
-                std::cout << "inbox->sign(" + std::to_string(STAGE) + ")[detected=(" + std::to_string(sign_detected) + "),reached=(" + std::to_string(sign_reached) + ")]" << std::endl;
+                std::cout << "sign(" + std::to_string(STAGE) + ") inbox-> object[detected=(" + std::to_string(sign_detected) + "),reached=(" + std::to_string(sign_reached) + ")]" << std::endl;
             }
         };
 
-        bool front_trigger = false, left_trigger = false; //acc service (triggers)
-        bool north = false, east = false, west = false;   //color service
-        auto acc_trigger = [VERBOSE, ACC, STAGE, &front_trigger, &left_trigger, north, east, &west](cluon::data::Envelope &&envelope) {
+        bool front_trigger = false, left_trigger = false;                                                               //acc service (triggers)
+        bool north_stage1 = false, east_stage1 = false, west_stage1 = false, north_stage2 = false, east_stage2 = false; //color service
+        auto acc_trigger = [VERBOSE, ACC, &STAGE, &front_trigger, &left_trigger](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::trigger>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             front_trigger = msg.front_sensor();
             left_trigger = msg.left_sensor();
 
-            if (north == true && east == true)
-            {
-                if ((front_trigger || left_trigger))
-                {
-                    west = false;
-                }
-            }
-
-            if (north == true && east == false)
-            {
-                if ((front_trigger || left_trigger))
-                {
-                    west = false;
-                }
-            }
-            if (east == true && north == false)
-            {
-                if ((front_trigger || left_trigger))
-                {
-                    west = false;
-                }
-            }
-
             if (VERBOSE || ACC)
             {
-                std::cout << "inbox->acc(" + std::to_string(STAGE) + ")[left trigger=(" + std::to_string(left_trigger) + ")," + "right trigger=(" + std::to_string(front_trigger) + ")]" << std::endl;
+                std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> acc[left trigger=(" + std::to_string(left_trigger) + ")," + "right trigger=(" + std::to_string(front_trigger) + ")]" << std::endl;
             }
         };
 
-        auto color_intersection = [VERBOSE, COLOR, &STAGE, &north, &east, &west](cluon::data::Envelope &&envelope) {
+        std::chrono::milliseconds timer(DELAY);
+        auto color_intersection = [VERBOSE, COLOR, &STAGE, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2, &front_trigger, &left_trigger, &services, &carlos_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::intersection>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             if (STAGE == 1)
             {
-                north = msg.north();
-                east = msg.east();
-                west = msg.west();
+                north_stage1 = msg.north();
+                east_stage1 = msg.east();
+                west_stage1 = msg.west();
             }
 
             if (STAGE == 2)
             {
-                north = msg.north();
-                east = msg.east();
+                north_stage2 = msg.north();
+                east_stage2 = msg.east();
+            }
+
+            if (STAGE == 2)
+            {
+                if (front_trigger == true || left_trigger == true)
+                {
+
+                    if ((north_stage1 != north_stage2) || (east_stage1 != east_stage2))
+                    {
+                        west_stage1 = false;
+                    }
+                }
+
+                if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
+                {
+                    STAGE = 3;
+                    services.stage(STAGE);
+                    services.semaphore(true);
+                    carlos_session.send(services);
+
+                    if (VERBOSE)
+                    {
+                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> sensor_x_visual [Intersection is clear]" << std::endl;
+                    }
+                }
             }
 
             if (VERBOSE || COLOR)
             {
-                std::cout << "inbox->color(" + std::to_string(STAGE) + ")[west=(" + std::to_string(west) + "), north=(" + std::to_string(north) + "), east=(" + std::to_string(east) + ")]" << std::endl;
+                std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> color[west=(" + std::to_string(west_stage1) + "), north=(" + std::to_string(north_stage1) + "), east=(" + std::to_string(east_stage1) + ")]" << std::endl;
             }
         };
 
@@ -194,7 +199,7 @@ int32_t main(int32_t argc, char **argv)
             }
             if (VERBOSE || CMD)
             {
-                std::cout << "inbox->command(" + std::to_string(STAGE) + ")[Intersetion Complete]" << std::endl;
+                std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> cmd[Intersetion Complete]" << std::endl;
             }
         };
 

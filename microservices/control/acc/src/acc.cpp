@@ -38,7 +38,7 @@ int32_t main(int32_t argc, char **argv)
     const bool DEBUG{commandlineArguments.count("debug") != 0};
     const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.30)};
     const float USER_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
-    const float INTERSECTION{(commandlineArguments.count("trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["trig"])) : static_cast<float>(0.2)};
+    const float INTERSECTION{(commandlineArguments.count("trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["trig"])) : static_cast<float>(0.35)};
 
     if (SAFE_DISTANCE < 0 || USER_SPEED < 0 || USER_SPEED > 0.5)
     {

@@ -4,7 +4,7 @@
  * and should be distributed at YOUR OWN RISK.
 */
 
-message carlos.acc.status [id = 3100]{
+message carlos.status [id = 3000]{
   bool semaphore [id = 1];
   uint16 stage [id = 2];
 }
@@ -18,30 +18,16 @@ message carlos.acc.trigger [id = 3102]{
   bool left_sensor [id = 2];
 }
 
-message carlos.cmd.status [id = 3200]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
-}
-
-message carlos.cmd.path [id = 3201]{
-  uint16 turn [id = 1];
-  /*1 = left, 2 = right, 0 = straight*/
-}
-
-message carlos.object.status [id = 3300]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
+message carlos.cmd.turn_status [id = 3201]{
+  bool east_turn [id=1];
+  bool west_turn [id=2];
+  bool north_turn [id=3];
+  bool complete [id=4];
 }
 
 message carlos.object.sign [id = 3301]{
   bool detected [id = 1];
   bool reached [id = 2];
-  uint16 type [id = 3];
-}
-
-message carlos.color.status [id = 3400]{
-  bool semaphore [id = 1];
-  uint16 stage [id = 2];
 }
 
 message carlos.color.lead_car [id = 3401]{

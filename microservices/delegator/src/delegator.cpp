@@ -125,21 +125,44 @@ int32_t main(int32_t argc, char **argv)
 
         bool front_trigger = false, left_trigger = false;                                                               //acc service (triggers)
         bool north_stage1 = false, east_stage1 = false, west_stage1 = false, north_stage2 = false, east_stage2 = false; //color service
-        auto acc_trigger = [VERBOSE, ACC, &STAGE, &front_trigger, &left_trigger](cluon::data::Envelope &&envelope) {
+        auto acc_trigger = [VERBOSE, ACC, &STAGE, &front_trigger, &left_trigger, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2, &services, &carlos_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::trigger>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             front_trigger = msg.front_sensor();
             left_trigger = msg.left_sensor();
 
-            if (VERBOSE || ACC)
+            if (STAGE == 2)
             {
-                std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> acc[left trigger=(" + std::to_string(left_trigger) + ")," + "right trigger=(" + std::to_string(front_trigger) + ")]" << std::endl;
+                if (front_trigger == true || left_trigger == true)
+                {
+                    if ((north_stage1 == north_stage2) || (east_stage1 == east_stage2))
+                    {
+                        west_stage1 = false;
+                    }
+                    if (VERBOSE || ACC)
+                    {
+                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> acc[left trigger=(" + std::to_string(left_trigger) + ")," + "right trigger=(" + std::to_string(front_trigger) + ")]" << std::endl;
+                    }
+                }
+
+                if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
+                {
+                    STAGE = 3;
+                    services.stage(STAGE);
+                    services.semaphore(true);
+                    carlos_session.send(services);
+
+                    if (VERBOSE || ACC)
+                    {
+                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
+                    }
+                }
             }
         };
 
         std::chrono::milliseconds timer(DELAY);
-        auto color_intersection = [VERBOSE, COLOR, &STAGE, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2, &front_trigger, &left_trigger, &services, &carlos_session](cluon::data::Envelope &&envelope) {
+        auto color_intersection = [VERBOSE, COLOR, &STAGE, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::intersection>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -154,31 +177,6 @@ int32_t main(int32_t argc, char **argv)
             {
                 north_stage2 = msg.north();
                 east_stage2 = msg.east();
-            }
-
-            if (STAGE == 2)
-            {
-                if (front_trigger == true || left_trigger == true)
-                {
-
-                    if ((north_stage1 != north_stage2) || (east_stage1 != east_stage2))
-                    {
-                        west_stage1 = false;
-                    }
-                }
-
-                if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
-                {
-                    STAGE = 3;
-                    services.stage(STAGE);
-                    services.semaphore(true);
-                    carlos_session.send(services);
-
-                    if (VERBOSE)
-                    {
-                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> sensor_x_visual [Intersection is clear]" << std::endl;
-                    }
-                }
             }
 
             if (VERBOSE || COLOR)

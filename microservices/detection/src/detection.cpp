@@ -36,7 +36,7 @@ int32_t main(int32_t argc, char **argv)
     //**VARIABLES**//
     int32_t retCode{1};
     bool stopSignPresent = false, stopSignDetected = false, westCar = false, northCar = true, eastCar = false;
-    uint16_t stage = 1; //uint16_t status=0;
+    uint16_t stage = 0; //uint16_t status=0;
     String stopSigns_cascade_name;
     CascadeClassifier stopSigns_cascade;
     vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
@@ -135,7 +135,7 @@ int32_t main(int32_t argc, char **argv)
             int framesCounted = 0;
             int objectsCounted = 0;
             // Endless loop; end the program by pressing Ctrl-C.
-            while (carlos_session.isRunning() || kiwi_session.isRunning())
+            while (carlos_session.isRunning() && kiwi_session.isRunning())
             {
                 // Wait for a notification of a new frame.
                 sharedMemory->wait();
@@ -279,7 +279,7 @@ int32_t main(int32_t argc, char **argv)
                             if (getCenterOfContour(car_contours[k]).x < resizedImg.size().width / 100 * 30)
                                 westCar = true;
                             //else westCar=false;
-                            if (getCenterOfContour(car_contours[k]).x >= resizedImg.size().width / 100 * 30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width / 100 * 65)
+                            if (getCenterOfContour(car_contours[k]).x >= resizedImg.size().width / 100 * 30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width / 100 * 55)
                                 northCar = true;
                             //else northCar=false;
                             if (getCenterOfContour(car_contours[k]).x > resizedImg.size().width / 100 * 65)

@@ -132,30 +132,30 @@ int32_t main(int32_t argc, char **argv)
             front_trigger = msg.front_sensor();
             left_trigger = msg.left_sensor();
 
-            if (STAGE == 2)
+            if (STAGE == 2 && west_stage1 == false)
             {
                 if (front_trigger == true || left_trigger == true)
                 {
                     if ((north_stage1 == north_stage2) || (east_stage1 == east_stage2))
                     {
                         west_stage1 = false;
+
+                        if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
+                        {
+                            STAGE = 3;
+                            services.stage(STAGE);
+                            services.semaphore(true);
+                            carlos_session.send(services);
+
+                            if (VERBOSE || ACC)
+                            {
+                                std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
+                            }
+                        }
                     }
                     if (VERBOSE || ACC)
                     {
                         std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> acc[left trigger=(" + std::to_string(left_trigger) + ")," + "right trigger=(" + std::to_string(front_trigger) + ")]" << std::endl;
-                    }
-                }
-
-                if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
-                {
-                    STAGE = 3;
-                    services.stage(STAGE);
-                    services.semaphore(true);
-                    carlos_session.send(services);
-
-                    if (VERBOSE || ACC)
-                    {
-                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
                     }
                 }
             }
@@ -177,6 +177,19 @@ int32_t main(int32_t argc, char **argv)
             {
                 north_stage2 = msg.north();
                 east_stage2 = msg.east();
+            }
+
+            if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
+            {
+                STAGE = 3;
+                services.stage(STAGE);
+                services.semaphore(true);
+                carlos_session.send(services);
+
+                if (VERBOSE || OBJECT)
+                {
+                    std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
+                }
             }
 
             if (VERBOSE || COLOR)

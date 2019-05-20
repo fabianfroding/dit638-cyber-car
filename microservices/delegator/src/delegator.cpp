@@ -106,6 +106,7 @@ int32_t main(int32_t argc, char **argv)
                 //send messages
                 carlos_session.send(services);
             }
+
             if (sign_reached && (sign_detected == false))
             {
                 STAGE = 2;
@@ -177,18 +178,18 @@ int32_t main(int32_t argc, char **argv)
             {
                 north_stage2 = msg.north();
                 east_stage2 = msg.east();
-            }
 
-            if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
-            {
-                STAGE = 3;
-                services.stage(STAGE);
-                services.semaphore(true);
-                carlos_session.send(services);
-
-                if (VERBOSE || COLOR)
+                if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
                 {
-                    std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
+                    STAGE = 3;
+                    services.stage(STAGE);
+                    services.semaphore(true);
+                    carlos_session.send(services);
+
+                    if (VERBOSE || COLOR)
+                    {
+                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
+                    }
                 }
             }
 

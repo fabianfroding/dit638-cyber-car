@@ -86,62 +86,62 @@ int32_t main(int32_t argc, char **argv)
             carlos::acc::collision collision_status; //carlos
             carlos::acc::trigger trigger;            //carlos
 
-            if (STAGE <= 1)
+            if ((STAGE == 0 || STAGE == 1) && senderStamp == front_sensor)
             {
-                if (senderStamp == front_sensor)
+                if (count == 3)
                 {
-                    if (count == 3)
+                    float sensor_average = sensor_total / 4.0;
+
+                    if (DEBUG)
                     {
-                        float sensor_average = sensor_total / 4.0;
+                        std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Calculating Sensor data -> average sensor data [" << sensor_average << "], total sensor data[" << sensor_total << "] count = " << count << std::endl;
+                    }
 
-                        if (DEBUG)
-                        {
-                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Calculating Sensor data -> average sensor data [" << sensor_average << "], total sensor data[" << sensor_total << "] count = " << count << std::endl;
-                        }
-
-                        if (sensor_average < SAFE_DISTANCE)
-                        {
-                            SPEED = 0;
-                            pedal.position(SPEED);
-
-                            if (VERBOSE)
-                            {
-                                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Object Detected at [" << sensor_average << "]" << std::endl;
-                            }
-                        }
-                        else
-                        {
-                            SPEED = USER_SPEED;
-                            pedal.position(SPEED);
-
-                            if (VERBOSE)
-                            {
-                                std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Sent move instructions at speed [" << SPEED << "]" << std::endl;
-                            }
-                        }
-
-                        if (SEMAPHORE && STAGE != 3)
+                    if (sensor_average < SAFE_DISTANCE)
+                    {
+                        SPEED = 0;
+                        pedal.position(SPEED);
+                        if (SEMAPHORE)
                         {
                             kiwi_session.send(pedal);
                         }
 
-                        //send collsion data
-                        collision_status.collision_warning((sensor_average < SAFE_DISTANCE) ? true : false);
-                        carlos_session.send(collision_status);
-
-                        //reset sensor variables
-                        count = 0;
-                        sensor_total = 0;
+                        if (VERBOSE)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Object Detected at [" << sensor_average << "]" << std::endl;
+                        }
                     }
                     else
                     {
-                        sensor_total = sensor_total + sensor;
-                        if (DEBUG)
+                        SPEED = USER_SPEED;
+                        pedal.position(SPEED);
+                        if (SEMAPHORE)
                         {
-                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Collecting Sensor data -> sensor[" << sensor << "], total sensor data[" << sensor_total << "] count = " << count << std::endl;
+                            kiwi_session.send(pedal);
                         }
-                        count = count + 1;
+
+                        if (VERBOSE)
+                        {
+                            std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Sent move instructions at speed [" << SPEED << "]" << std::endl;
+                        }
                     }
+
+                    //send collsion data
+                    collision_status.collision_warning((sensor_average < SAFE_DISTANCE) ? true : false);
+                    carlos_session.send(collision_status);
+
+                    //reset sensor variables
+                    count = 0;
+                    sensor_total = 0;
+                }
+                else
+                {
+                    sensor_total = sensor_total + sensor;
+                    if (DEBUG)
+                    {
+                        std::cout << "STAGE(" + std::to_string(STAGE) + ")->SEM(" + std::to_string(SEMAPHORE) + "): Collecting Sensor data -> sensor[" << sensor << "], total sensor data[" << sensor_total << "] count = " << count << std::endl;
+                    }
+                    count = count + 1;
                 }
             }
             if (STAGE == 2)

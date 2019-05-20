@@ -26,8 +26,6 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--cmd] filter the cmd messages" << std::endl;
         std::cerr << argv[0] << "[--color] filter the color detection messages" << std::endl;
         std::cerr << argv[0] << "[--sign] filter the object detection messages" << std::endl;
-        std::cerr << argv[0] << "[--delay<int>] delay trigger response" << std::endl;
-        //  std::cerr << argv[0] << "[--debug]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--verbose --sign" << std::endl;
         return -1;
@@ -38,8 +36,6 @@ int32_t main(int32_t argc, char **argv)
     const bool CMD{commandlineArguments.count("cmd") != 0};
     const bool COLOR{commandlineArguments.count("color") != 0};
     const bool SIGN{commandlineArguments.count("sign") != 0};
-    //const bool DEBUG{commandlineArguments.count("debug") != 0};
-    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(3000)};
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
 
@@ -49,6 +45,7 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cout << "[delegator] micro-service started..." << std::endl;
 
+        /*semaphor*/
         const bool LOCK = false;
         const bool UNLOCK = true;
         int16_t STAGE = 0;
@@ -104,6 +101,8 @@ int32_t main(int32_t argc, char **argv)
             {
                 STAGE = 1;
                 services.stage(STAGE);
+                //send messages
+                carlos_session.send(services);
             }
 
             if (sign_reached == true && sign_detected == false)
@@ -112,10 +111,9 @@ int32_t main(int32_t argc, char **argv)
 
                 services.stage(STAGE);
                 services.semaphore(LOCK);
+                //send messages
+                carlos_session.send(services);
             }
-
-            //send messages
-            carlos_session.send(services);
 
             if (VERBOSE || SIGN)
             {
@@ -132,12 +130,16 @@ int32_t main(int32_t argc, char **argv)
             front_trigger = msg.front_sensor();
             left_trigger = msg.left_sensor();
 
-            if (STAGE == 2 && west_stage1 == false)
+            if (STAGE == 2 && west_stage1 == true)
             {
                 if (front_trigger == true || left_trigger == true)
                 {
-                    if (north_stage1 == north_stage2 && east_stage1 == east_stage2)
+                    if (east_stage1 == east_stage2)
                     {
+                        if (VERBOSE)
+                        {
+                            std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> checking east lane" << std::endl;
+                        }
                         west_stage1 = false;
 
                         if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
@@ -153,15 +155,36 @@ int32_t main(int32_t argc, char **argv)
                             }
                         }
                     }
+                    if (north_stage1 == north_stage2)
+                    {
+                        if (VERBOSE)
+                        {
+                            std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> checking north lane" << std::endl;
+                        }
+                        west_stage1 = false;
+
+                        if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
+                        {
+                            STAGE = 3;
+                            services.stage(STAGE);
+                            services.semaphore(true);
+                            carlos_session.send(services);
+
+                            if (VERBOSE || ACC)
+                            {
+                                std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
+                            }
+                        }
+                    }
+
                     if (VERBOSE || ACC)
                     {
-                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> acc[left trigger=(" + std::to_string(left_trigger) + ")," + "right trigger=(" + std::to_string(front_trigger) + ")]" << std::endl;
+                        std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> acc[left trigger=(" + std::to_string(left_trigger) + ")," + "front trigger=(" + std::to_string(front_trigger) + ")]" << std::endl;
                     }
                 }
             }
         };
 
-        std::chrono::milliseconds timer(DELAY);
         auto color_intersection = [VERBOSE, COLOR, &STAGE, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2, &services, &carlos_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::intersection>(std::move(envelope));
@@ -242,7 +265,6 @@ int32_t main(int32_t argc, char **argv)
         {
             /* just run this microservice until ist crashes */
             //send messages
-            carlos_session.send(services);
         }
     }
     else

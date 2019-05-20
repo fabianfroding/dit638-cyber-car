@@ -111,7 +111,15 @@ int32_t main(int32_t argc, char **argv)
                     {
                         std::cout << "West lane engaged" << std::endl;
                         //turn wheel
-                        wheel.groundSteering(TURN);
+                        if (DEBUG)
+                        {
+                            wheel.groundSteering(TURN);
+                        }
+                        else
+                        {
+                            wheel.groundSteering(0.14);
+                        }
+
                         if (SEMAPHORE)
                         {
                             kiwi_session.send(wheel);
@@ -192,7 +200,15 @@ int32_t main(int32_t argc, char **argv)
                     {
                         std::cout << "East lane engaged" << std::endl;
                         //turn wheel
-                        wheel.groundSteering(-1 * TURN);
+                        if (DEBUG)
+                        {
+                            wheel.groundSteering(-1 * TURN);
+                        }
+                        else
+                        {
+                            wheel.groundSteering(-0.25);
+                        }
+
                         if (SEMAPHORE)
                         {
                             kiwi_session.send(wheel);

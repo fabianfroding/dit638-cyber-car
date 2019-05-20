@@ -92,7 +92,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         bool sign_detected = false, sign_reached = false; //object service
-        auto object_sign = [VERBOSE, SIGN, &STAGE, &carlos_session, &services, &LOCK, &UNLOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
+        auto object_sign = [VERBOSE, SIGN, &STAGE, &carlos_session, &services, &LOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::object::sign>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -104,7 +104,6 @@ int32_t main(int32_t argc, char **argv)
             {
                 STAGE = 1;
                 services.stage(STAGE);
-                services.semaphore(UNLOCK);
             }
 
             if (sign_reached == true && sign_detected == false)

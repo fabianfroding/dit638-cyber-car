@@ -120,7 +120,7 @@ int32_t main(int32_t argc, char **argv)
                             }
                         }
 
-                        if (SEMAPHORE)
+                        if (SEMAPHORE && STAGE != 3)
                         {
                             kiwi_session.send(pedal);
                         }
@@ -196,13 +196,6 @@ int32_t main(int32_t argc, char **argv)
                     }
                     carlos_session.send(trigger);
                 }
-            }
-            if (STAGE == 3)
-            {
-                SPEED = 0;
-                pedal.position(SPEED);
-                kiwi_session.send(pedal);
-                SEMAPHORE = false;
             }
         };
 

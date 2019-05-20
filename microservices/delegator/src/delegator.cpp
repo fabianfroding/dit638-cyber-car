@@ -162,7 +162,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         std::chrono::milliseconds timer(DELAY);
-        auto color_intersection = [VERBOSE, COLOR, &STAGE, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2](cluon::data::Envelope &&envelope) {
+        auto color_intersection = [VERBOSE, COLOR, &STAGE, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2, &services, &carlos_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::color::intersection>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -186,7 +186,7 @@ int32_t main(int32_t argc, char **argv)
                 services.semaphore(true);
                 carlos_session.send(services);
 
-                if (VERBOSE || OBJECT)
+                if (VERBOSE || COLOR)
                 {
                     std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
                 }

@@ -37,16 +37,16 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cout << "Simulator engaged" << std::endl;
 
-        //vision
+        //command
+        carlos::cmd::turn_status direction_sign;
+        direction_sign.west_turn(true);
+        direction_sign.north_turn(true);
+        direction_sign.east_turn(true);
+        //sign
         carlos::object::sign sign_tracker;
+
+        //intersection
         carlos::color::intersection intersection_tracker;
-
-        // //acc
-        // carlos::acc::collision collision_status;
-        // carlos::acc::trigger trigger;
-
-        // //command
-        // carlos::cmd::turn_status intersection_command;
 
         //delay
         std::chrono::milliseconds timer(DELAY);
@@ -81,9 +81,6 @@ int32_t main(int32_t argc, char **argv)
                 */
                     sign_tracker.detected(false);
                     sign_tracker.reached(false);
-                    sign_tracker.turn_west(false);
-                    sign_tracker.turn_north(false);
-                    sign_tracker.turn_east(false);
 
                     std::cout << "Detecting sign" << std::endl;
                     sign_tracker.detected(true);
@@ -142,32 +139,32 @@ int32_t main(int32_t argc, char **argv)
 
                 if (west_sign == 1)
                 {
-                    sign_tracker.turn_west(false);
+                    direction_sign.west_turn(false);
                 }
                 else
                 {
-                    sign_tracker.turn_west(true);
+                    direction_sign.west_turn(true);
                 }
 
                 if (north_sign == 1)
                 {
-                    sign_tracker.turn_north(false);
+                    direction_sign.north_turn(false);
                 }
                 else
                 {
-                    sign_tracker.turn_north(true);
+                    direction_sign.north_turn(true);
                 }
 
                 if (east_sign == 1)
                 {
-                    sign_tracker.turn_east(false);
+                    direction_sign.east_turn(false);
                 }
                 else
                 {
-                    sign_tracker.turn_west(true);
+                    direction_sign.east_turn(true);
                 }
 
-                carlos_session.send(sign_tracker);
+                carlos_session.send(direction_sign);
                 std::this_thread::sleep_for(timer);
             }
 

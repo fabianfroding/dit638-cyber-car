@@ -134,32 +134,11 @@ int32_t main(int32_t argc, char **argv)
             {
                 if (front_trigger == true || left_trigger == true)
                 {
-                    if (east_stage1 == east_stage2)
+                    if ((east_stage1 == east_stage2) && (north_stage1 == north_stage2))
                     {
                         if (VERBOSE)
                         {
                             std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> checking east lane" << std::endl;
-                        }
-                        west_stage1 = false;
-
-                        if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
-                        {
-                            STAGE = 3;
-                            services.stage(STAGE);
-                            services.semaphore(true);
-                            carlos_session.send(services);
-
-                            if (VERBOSE || ACC)
-                            {
-                                std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
-                            }
-                        }
-                    }
-                    if (north_stage1 == north_stage2)
-                    {
-                        if (VERBOSE)
-                        {
-                            std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> checking north lane" << std::endl;
                         }
                         west_stage1 = false;
 
@@ -237,19 +216,28 @@ int32_t main(int32_t argc, char **argv)
             }
         };
 
-        auto turn_status = [VERBOSE, CMD, &STAGE](cluon::data::Envelope &&envelope) {
+        bool west_turn = true, east_turn = true, north_turn = true;
+        auto turn_status = [VERBOSE, CMD, &STAGE, &west_turn, &north_turn, &east_turn](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::cmd::turn_status>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             bool command_turn_status = msg.complete();
+            west_turn = msg.west_turn();
+            north_turn = msg.north_turn();
+            east_turn = msg.east_turn();
 
             if (command_turn_status == true)
             {
                 STAGE = 0;
+                if (VERBOSE || CMD)
+                {
+                    std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> cmd[Intersetion Complete]" << std::endl;
+                }
             }
-            if (VERBOSE || CMD)
+
+            if (VERBOSE)
             {
-                std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> cmd[Intersetion Complete]" << std::endl;
+                std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(west_turn) + ", North turn: " + std::to_string(north_turn) + ",East turn: " + std::to_string(east_turn) << std::endl;
             }
         };
 
@@ -265,6 +253,8 @@ int32_t main(int32_t argc, char **argv)
         {
             /* just run this microservice until ist crashes */
             //send messages
+            carlos_session.send(services);
+            /*send stage and semaphore data all the time for micro-services that jump into a session at any time*/
         }
     }
     else

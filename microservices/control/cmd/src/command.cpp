@@ -64,7 +64,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         bool turn_west = true, turn_north = true, turn_east = true;
-        auto turn_status = [VERBOSE, &turn_west, &turn_north, &turn_east](cluon::data::Envelope &&envelope) {
+        auto turn_status = [VERBOSE, STAGE, &turn_west, &turn_north, &turn_east](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::cmd::turn_status>(std::move(envelope));
             /*store data*/
@@ -74,7 +74,7 @@ int32_t main(int32_t argc, char **argv)
 
             if (VERBOSE)
             {
-                std::cout << "session started..." << std::endl;
+                std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
             }
         };
 
@@ -89,15 +89,13 @@ int32_t main(int32_t argc, char **argv)
 
         while (kiwi_session.isRunning())
         {
-            std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
-
             if (STAGE == 3 || DEBUG)
             {
+                std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
                 if (DEBUG)
                 {
                     std::cout << "[DEBUG]: Choose Path (west->[9], north->[12], east->[3]):" << std::endl;
                 }
-
                 if (STAGE == 3)
                 {
                     std::cout << "[STAGE 3 Engaged]: Choose Path (west->[9], north->[12], east->[3]):" << std::endl;
@@ -148,6 +146,9 @@ int32_t main(int32_t argc, char **argv)
                         {
                             kiwi_session.send(wheel);
                         }
+
+                        intersection_turn_status.complete(true);
+                        carlos_session.send(intersection_turn_status);
                     }
                     else
                     {
@@ -188,6 +189,8 @@ int32_t main(int32_t argc, char **argv)
                         {
                             kiwi_session.send(wheel);
                         }
+                        intersection_turn_status.complete(true);
+                        carlos_session.send(intersection_turn_status);
                     }
                     else
                     {
@@ -237,6 +240,8 @@ int32_t main(int32_t argc, char **argv)
                         {
                             kiwi_session.send(wheel);
                         }
+                        intersection_turn_status.complete(true);
+                        carlos_session.send(intersection_turn_status);
                     }
                     else
                     {
@@ -244,12 +249,6 @@ int32_t main(int32_t argc, char **argv)
                     }
                     break;
                 }
-
-                intersection_turn_status.complete(true);
-                carlos_session.send(intersection_turn_status);
-            }
-            else
-            {
             }
         }
     }

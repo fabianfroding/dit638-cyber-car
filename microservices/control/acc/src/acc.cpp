@@ -24,7 +24,8 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--carlos=<int>] ID of carlos microservices" << std::endl;
         std::cerr << argv[0] << "[--sd=<float>] safety distance for vehicle" << std::endl;
         std::cerr << argv[0] << "[--sp=<float, min is 0.13 and max is 0.8>]" << std::endl;
-        std::cerr << argv[0] << "[--trig=<float>] tirgger distance for vehicle at intersection" << std::endl;
+        std::cerr << argv[0] << "[--left_trig=<float>] tirgger distance for vehicle at intersection" << std::endl;
+        std::cerr << argv[0] << "[--front_trig=<float>] tirgger distance for vehicle at intersection" << std::endl;
         std::cerr << argv[0] << "[--debug] show more information on addaptive cruise control" << std::endl;
         std::cerr << argv[0] << "[--verbose]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
@@ -38,7 +39,8 @@ int32_t main(int32_t argc, char **argv)
     const bool DEBUG{commandlineArguments.count("debug") != 0};
     const float SAFE_DISTANCE{(commandlineArguments.count("sd") != 0) ? static_cast<float>(std::stof(commandlineArguments["sd"])) : static_cast<float>(0.30)};
     const float USER_SPEED{(commandlineArguments.count("sp") != 0) ? static_cast<float>(std::stof(commandlineArguments["sp"])) : static_cast<float>(0.15)};
-    const float INTERSECTION{(commandlineArguments.count("trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["trig"])) : static_cast<float>(0.35)};
+    const float LEFT_TRIG{(commandlineArguments.count("left_trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["left_trig"])) : static_cast<float>(0.3)};
+    const float FRONT_TRIG{(commandlineArguments.count("front_trig") != 0) ? static_cast<float>(std::stof(commandlineArguments["front_trig"])) : static_cast<float>(0.65)};
 
     if (SAFE_DISTANCE < 0 || USER_SPEED < 0 || USER_SPEED > 0.5)
     {
@@ -75,7 +77,7 @@ int32_t main(int32_t argc, char **argv)
         opendlv::proxy::PedalPositionRequest pedal; //kiwi
         int16_t count = 0;
         float sensor_total = 0;
-        auto get_sensor_information = [VERBOSE, DEBUG, SAFE_DISTANCE, USER_SPEED, INTERSECTION, &SEMAPHORE, &carlos_session, &SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
+        auto get_sensor_information = [VERBOSE, DEBUG, SAFE_DISTANCE, USER_SPEED, LEFT_TRIG, FRONT_TRIG, &SEMAPHORE, &carlos_session, &SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -153,7 +155,7 @@ int32_t main(int32_t argc, char **argv)
                 if (senderStamp == front_sensor)
                 {
                     //intersection
-                    if (sensor <= INTERSECTION)
+                    if (sensor <= FRONT_TRIG)
                     {
                         trigger.front_sensor(true);
 
@@ -176,7 +178,7 @@ int32_t main(int32_t argc, char **argv)
                 if (senderStamp == left_sensor)
                 {
                     //intersection
-                    if (sensor <= INTERSECTION)
+                    if (sensor <= LEFT_TRIG)
                     {
                         trigger.left_sensor(true);
 

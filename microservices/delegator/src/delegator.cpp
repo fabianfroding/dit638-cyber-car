@@ -27,6 +27,7 @@ int32_t main(int32_t argc, char **argv)
         std::cerr << argv[0] << "[--color] filter the color detection messages" << std::endl;
         std::cerr << argv[0] << "[--sign] filter the object detection messages" << std::endl;
         std::cerr << argv[0] << "[--delay<int>] delay trigger response" << std::endl;
+        //  std::cerr << argv[0] << "[--debug]" << std::endl;
         std::cerr << argv[0] << "[--help]" << std::endl;
         std::cerr << "example:  " << argv[0] << "--verbose --sign" << std::endl;
         return -1;
@@ -37,6 +38,7 @@ int32_t main(int32_t argc, char **argv)
     const bool CMD{commandlineArguments.count("cmd") != 0};
     const bool COLOR{commandlineArguments.count("color") != 0};
     const bool SIGN{commandlineArguments.count("sign") != 0};
+    //const bool DEBUG{commandlineArguments.count("debug") != 0};
     const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(3000)};
 
     std::cout << "starting up " << argv[0] << "..." << std::endl;
@@ -90,7 +92,7 @@ int32_t main(int32_t argc, char **argv)
         };
 
         bool sign_detected = false, sign_reached = false; //object service
-        auto object_sign = [VERBOSE, SIGN, &STAGE, &carlos_session, &services, &LOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
+        auto object_sign = [VERBOSE, SIGN, &STAGE, &carlos_session, &services, &LOCK, &UNLOCK, &sign_detected, &sign_reached](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::object::sign>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
@@ -135,7 +137,7 @@ int32_t main(int32_t argc, char **argv)
             {
                 if (front_trigger == true || left_trigger == true)
                 {
-                    if (north_stage1 == north_stage2 || east_stage1 == east_stage2)
+                    if (north_stage1 == north_stage2 && east_stage1 == east_stage2)
                     {
                         west_stage1 = false;
 
@@ -170,12 +172,28 @@ int32_t main(int32_t argc, char **argv)
                 north_stage1 = msg.north();
                 east_stage1 = msg.east();
                 west_stage1 = msg.west();
+
+                if (VERBOSE || COLOR)
+                {
+                    std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> color[west=(" + std::to_string(west_stage1) + "), north=(" + std::to_string(north_stage1) + "), east=(" + std::to_string(east_stage1) + ")]" << std::endl;
+                }
             }
 
             if (STAGE == 2)
             {
                 north_stage2 = msg.north();
+                if (north_stage2 == false)
+                {
+                    north_stage1 = false;
+                }
+
                 east_stage2 = msg.east();
+                if (east_stage2 == false)
+                {
+                    east_stage1 = false;
+                }
+
+                //west lane does not change from stage 1
 
                 if (north_stage2 == false && east_stage2 == false && west_stage1 == false)
                 {
@@ -189,11 +207,11 @@ int32_t main(int32_t argc, char **argv)
                         std::cout << "stage(" + std::to_string(STAGE) + ") inbox -> [Intersection is clear for driving]" << std::endl;
                     }
                 }
-            }
 
-            if (VERBOSE || COLOR)
-            {
-                std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> color[west=(" + std::to_string(west_stage1) + "), north=(" + std::to_string(north_stage1) + "), east=(" + std::to_string(east_stage1) + ")]" << std::endl;
+                if (VERBOSE || COLOR)
+                {
+                    std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> color[west=(" + std::to_string(west_stage1) + "), north=(" + std::to_string(north_stage2) + "), east=(" + std::to_string(east_stage2) + ")]" << std::endl;
+                }
             }
         };
 

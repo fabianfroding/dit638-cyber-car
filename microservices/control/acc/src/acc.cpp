@@ -75,7 +75,7 @@ int32_t main(int32_t argc, char **argv)
         opendlv::proxy::PedalPositionRequest pedal; //kiwi
         int16_t count = 0;
         float sensor_total = 0;
-        auto get_sensor_information = [VERBOSE, DEBUG, SAFE_DISTANCE, USER_SPEED, INTERSECTION, SEMAPHORE, &carlos_session, &SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
+        auto get_sensor_information = [VERBOSE, DEBUG, SAFE_DISTANCE, USER_SPEED, INTERSECTION, &SEMAPHORE, &carlos_session, &SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
             /*store sender id*/
@@ -86,7 +86,7 @@ int32_t main(int32_t argc, char **argv)
             carlos::acc::collision collision_status; //carlos
             carlos::acc::trigger trigger;            //carlos
 
-            if (STAGE != 2)
+            if (STAGE <= 1)
             {
                 if (senderStamp == front_sensor)
                 {
@@ -196,6 +196,13 @@ int32_t main(int32_t argc, char **argv)
                     }
                     carlos_session.send(trigger);
                 }
+            }
+            if (STAGE == 3)
+            {
+                SPEED = 0;
+                pedal.position(SPEED);
+                kiwi_session.send(pedal);
+                SEMAPHORE = false;
             }
         };
 

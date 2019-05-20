@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+#vscode
+.vscode/
+
+#docker
+build/*
+*.tar

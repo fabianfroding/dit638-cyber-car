@@ -1,0 +1,42 @@
+/**
+ * Copyright (C) Carlos, the car
+ * This software was created by students at the software engineering and management class of 2020
+ * and should be distributed at YOUR OWN RISK.
+*/
+
+message carlos.status [id = 3000]{
+  bool semaphore [id = 1];
+  uint16 stage [id = 2];
+}
+
+message carlos.acc.collision [id = 3101]{
+  bool collision_warning [id = 1];
+}
+
+message carlos.acc.trigger [id = 3102]{
+  bool front_sensor [id = 1];
+  bool left_sensor [id = 2];
+}
+
+message carlos.cmd.turn_status [id = 3201]{
+  bool east_turn [id=1];
+  bool west_turn [id=2];
+  bool north_turn [id=3];
+  bool complete [id=4];
+}
+
+message carlos.object.sign [id = 3301]{
+  bool detected [id = 1];
+  bool reached [id = 2];
+}
+
+message carlos.color.lead_car [id = 3401]{
+  float coc [id = 1];
+  float area [id = 2];
+}
+
+message carlos.color.intersection [id = 3402]{
+  bool north [id = 1];
+  bool east [id = 2];
+  bool west [id = 3];
+}

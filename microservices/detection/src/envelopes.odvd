@@ -22,14 +22,12 @@ message carlos.cmd.turn_status [id = 3201]{
   bool east_turn [id=1];
   bool west_turn [id=2];
   bool north_turn [id=3];
+  bool complete [id=4];
 }
 
 message carlos.object.sign [id = 3301]{
   bool detected [id = 1];
   bool reached [id = 2];
-  bool turn_west [id = 3];
-  bool turn_north [id = 4];
-  bool turn_east [id = 5]; 
 }
 
 message carlos.color.lead_car [id = 3401]{

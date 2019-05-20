@@ -98,25 +98,23 @@ int32_t main(int32_t argc, char **argv)
             sign_reached = msg.reached();
 
             /*STAGE LOGIC*/
-            if (sign_detected && (sign_reached == false))
+            if (sign_detected == true && sign_reached == false)
             {
                 STAGE = 1;
                 services.stage(STAGE);
-
-                //send messages
-                carlos_session.send(services);
+                services.semaphore(UNLOCK);
             }
 
-            if (sign_reached && (sign_detected == false))
+            if (sign_reached == true && sign_detected == false)
             {
                 STAGE = 2;
 
                 services.stage(STAGE);
                 services.semaphore(LOCK);
-
-                //send messages
-                carlos_session.send(services);
             }
+
+            //send messages
+            carlos_session.send(services);
 
             if (VERBOSE || SIGN)
             {
@@ -137,7 +135,7 @@ int32_t main(int32_t argc, char **argv)
             {
                 if (front_trigger == true || left_trigger == true)
                 {
-                    if ((north_stage1 == north_stage2) || (east_stage1 == east_stage2))
+                    if (north_stage1 == north_stage2 || east_stage1 == east_stage2)
                     {
                         west_stage1 = false;
 

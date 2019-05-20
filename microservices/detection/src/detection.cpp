@@ -36,7 +36,7 @@ int32_t main(int32_t argc, char **argv)
     //**VARIABLES**//
     int32_t retCode{1};
     bool stopSignPresent = false, stopSignDetected = false, westCar = false, northCar = true, eastCar = false;
-    uint16_t stage = 1; //uint16_t status=0;
+    uint16_t stage = 0; //uint16_t status=0;
     String stopSigns_cascade_name;
     CascadeClassifier stopSigns_cascade;
     vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
@@ -98,22 +98,34 @@ int32_t main(int32_t argc, char **argv)
             carlos::object::sign signStatus;
             // carlos::vision::sign sign_tracker;
 
-            bool SEMAPHORE = true;
-
-            /*prepared callback*/
-            auto semaphore = [VERBOSE, &SEMAPHORE](cluon::data::Envelope &&envelope) {
-                /** unpack message recieved*/
-                auto msg = cluon::extractMessage<carlos::status>(std::move(envelope));
-                /*store data*/
-                SEMAPHORE = msg.semaphore();
-            };
-            /*registered callback*/
-            carlos_session.dataTrigger(carlos::status::ID(), semaphore);
-
+            // Variables for getting the average cars/colors detected.
             double colorsCountedWest = 0;
             double colorsCountedNorth = 0;
             double colorsCountedEast = 0;
             int framesCountedColor = 0;
+
+            bool SEMAPHORE = true;
+
+            /*prepared callback*/
+            auto semaphore = [VERBOSE, &SEMAPHORE, &stage, &colorsCountedWest, &colorsCountedNorth, &colorsCountedEast, &framesCountedColor](cluon::data::Envelope &&envelope) {
+                /** unpack message recieved*/
+                auto msg = cluon::extractMessage<carlos::status>(std::move(envelope));
+                /*store data*/
+                SEMAPHORE = msg.semaphore();
+
+                // Reset cars counters if current stage is not stage recieved from envelope (i.e. the stage changes).
+                if (stage != msg.stage())
+                {
+                    colorsCountedWest = 0;
+                    colorsCountedNorth = 0;
+                    colorsCountedEast = 0;
+                    framesCountedColor = 0;
+                }
+
+                stage = msg.stage();
+            };
+            /*registered callback*/
+            carlos_session.dataTrigger(carlos::status::ID(), semaphore);
 
             // Variables for storing which cars were present before approaching the intersection.
             bool wasPresentBeforeWest = false;
@@ -155,7 +167,55 @@ int32_t main(int32_t argc, char **argv)
 
                 cout << "Stage " << stage << endl
                      << flush;
-                //==================== CODE FOR STAGE 1
+
+                //==================== CODE FOR STAGE 0
+                if (stage == 0)
+                {
+                    vector<Rect> stopSigns;
+                    stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
+                    size_t nStopSigns = stopSigns.size();
+                    objectsCounted += (double)nStopSigns;
+                    framesCounted++;
+
+                    if (nStopSigns != 0)
+                    {
+                        for (size_t i = 0; i < nStopSigns; i++)
+                        {
+                            Point center(stopSigns[i].x + stopSigns[i].width / 2, stopSigns[i].y + stopSigns[i].height / 2);
+                            ellipse(resizedImg, center, Size(stopSigns[i].width / 2, stopSigns[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
+                        }
+                    }
+
+                    if (framesCounted >= 5)
+                    {
+                        int avgObjects = int((objectsCounted / 5) + 0.5);
+                        cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
+                        framesCounted = 0;
+                        objectsCounted = 0;
+
+                        stopSignPresent = (0 < avgObjects) ? true : false;
+                        if (stopSignPresent)
+                        {
+                            stopSignDetected = true;
+                        }
+                        if (stopSignPresent && stopSignDetected)
+                        {
+                            signStatus.detected(true);
+                            signStatus.reached(false);
+                        }
+                        else if (!stopSignPresent && stopSignDetected)
+                        {
+                            signStatus.detected(false);
+                            signStatus.reached(true);
+                        }
+                        if (stopSignDetected)
+                        {
+                            carlos_session.send(signStatus);
+                        }
+                    }
+                }
+
+                //==================== CODE FOR STAGE 2
                 if (stage == 1)
                 {
                     //==============================
@@ -211,9 +271,6 @@ int32_t main(int32_t argc, char **argv)
                     car_rectangle.resize(car_contours.size());
 
                     //**PROCESS CAR GREEN DETECTION**
-                    eastCar = false;
-                    northCar = false;
-                    westCar = false;
                     for (size_t k = 0; k < car_contours.size(); k++)
                     {
                         approxPolyDP(car_contours[k], car_polygons[k], 3, true); //approximate the curve of the polygon
@@ -266,10 +323,9 @@ int32_t main(int32_t argc, char **argv)
                     }
                 }
 
-                //==================== CODE FOR STAGE 1
+                //==================== CODE FOR STAGE 2
                 else if (stage == 2)
                 {
-
                     car_contours = getContours(img_hsv, car_low, car_high);
                     car_polygons.resize(car_contours.size());
                     car_rectangle.resize(car_contours.size());
@@ -281,10 +337,10 @@ int32_t main(int32_t argc, char **argv)
                     for (size_t k = 0; k < car_contours.size(); k++)
                     {
                         approxPolyDP(car_contours[k], car_polygons[k], 3, true);
-                        if (arcLength(car_contours[k], false) > 60)
+                        if (arcLength(car_contours[k], false) > 40)
                         {
                             car_rectangle[k] = boundingRect(car_polygons[k]);
-                            if (getCenterOfContour(car_contours[k]).x >= resizedImg.size().width / 100 * 30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width / 100 * 65)
+                            if (getCenterOfContour(car_contours[k]).x <= resizedImg.size().width / 100 * 65)
                                 northCar = true;
                             if (getCenterOfContour(car_contours[k]).x > resizedImg.size().width / 100 * 65)
                                 eastCar = true;
@@ -292,7 +348,7 @@ int32_t main(int32_t argc, char **argv)
                         groupRectangles(car_rectangle, 3, 0.65); //group overlapping rectangles
                         drawRectangle(car_rectangle[k], resizedImg, edge);
                     }
-                    cout << northCar << " | " << eastCar << flush << endl;
+                    cout << westCar << " | " << northCar << " | " << eastCar << flush << endl;
                     colorsCountedNorth += (double)northCar;
                     colorsCountedEast += (double)eastCar;
                     framesCountedColor++;
@@ -320,8 +376,8 @@ int32_t main(int32_t argc, char **argv)
 
                         // For stage 2, we want to repeatedly check for the cars, unlike in stage 1. So we need to reset the average frame counter.
                         framesCountedColor = 0;
-                        avgCarsNorth = 0;
-                        avgCarsEast = 0;
+                        colorsCountedNorth = 0;
+                        colorsCountedEast = 0;
                     }
                 }
 

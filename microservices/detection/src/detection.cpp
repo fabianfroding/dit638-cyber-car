@@ -35,10 +35,15 @@ int32_t main(int32_t argc, char **argv)
 
     //**VARIABLES**//
     int32_t retCode{1};
-    bool stopSignPresent = false, stopSignDetected = false, westCar = false, northCar = true, eastCar = false;
-    uint16_t stage = 0; //uint16_t status=0;
+    bool stopSignPresent = false, stopSignDetected = false; // Tracks current status of stop sign.
+    bool westCar = false, northCar = true, eastCar = false; // Tracks current status of the cars at the intersection.
+    uint16_t stage = 0; // Keeps track of the current stage of our car.
+
+    // Haar cascade variables.
     String stopSigns_cascade_name;
     CascadeClassifier stopSigns_cascade;
+
+    // Color detection variables.
     vector<vector<Point>> car_contours, car_polygons, stop_contours, stop_polygons;
     vector<Rect> car_rectangle, stop_rectangle;
     vector<Vec4i> car_hierarchy, stop_hierarchy;
@@ -46,11 +51,12 @@ int32_t main(int32_t argc, char **argv)
     Mat img, img_hsv, car_frame_threshold, car_detected_edges, blur, resizedImg, img_higher_brightness, carROI, obj_frame, img2, resizedImg2;
     Scalar edge = Scalar(255, 255, 255);
 
-    //car sticker colors
+    // Car sticker colors
     double car_low_H = 40, car_high_H = 90, car_low_S = 60, car_high_S = 255, car_low_V = 51, car_high_V = 255; //,sensitivity=0;
     Scalar car_low = Scalar(car_low_H, car_low_S, car_low_V), car_high = Scalar(car_high_H, car_high_S, car_high_V);
     //**END VARIABLES**//
 
+    // Load Haar cascade.
     stopSigns_cascade_name = parser.get<String>("stopSigns_cascade");
     if (!stopSigns_cascade.load(stopSigns_cascade_name))
     {
@@ -86,7 +92,6 @@ int32_t main(int32_t argc, char **argv)
         if (sharedMemory && sharedMemory->valid())
         {
             clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << endl;
-            // cout<<"hello!"<<flush;
             // Interface to a running OpenDaVINCI session; here, you can send and receive messages.
             cluon::OD4Session carlos_session{CARLOS_SESSION};
             cluon::OD4Session kiwi_session{CID_SESSION};
@@ -96,7 +101,6 @@ int32_t main(int32_t argc, char **argv)
             carlos::color::intersection intersection_tracker;
             carlos::status status;
             carlos::object::sign signStatus;
-            // carlos::vision::sign sign_tracker;
 
             // Variables for getting the average cars/colors detected.
             double colorsCountedWest = 0;
@@ -113,8 +117,9 @@ int32_t main(int32_t argc, char **argv)
                 /*store data*/
                 SEMAPHORE = msg.semaphore();
 
-                // Reset cars counters if current stage is not stage recieved from envelope (i.e. the stage changes).
-                if (stage != msg.stage()) {
+                // Reset car counters if current stage is not stage recieved from envelope (i.e. the stage changes).
+                if (stage != msg.stage())
+                {
                     colorsCountedWest = 0;
                     colorsCountedNorth = 0;
                     colorsCountedEast = 0;
@@ -123,6 +128,7 @@ int32_t main(int32_t argc, char **argv)
 
                 stage = msg.stage();
             };
+
             /*registered callback*/
             carlos_session.dataTrigger(carlos::status::ID(), semaphore);
 
@@ -153,28 +159,35 @@ int32_t main(int32_t argc, char **argv)
                 }
                 sharedMemory->unlock();
 
+                // Color detection setup.
                 resize(img, resizedImg, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
                 resize(img2, resizedImg2, Size(static_cast<double>(img.cols) * 0.5, static_cast<double>(img2.rows * 0.5)), 0, 0, CV_INTER_LINEAR);
-                //resizedImg.convertTo(img_higher_brightness, -1, 1, 70); //increase the brightness by 20 for each pixel
                 cvtColor(resizedImg, img_hsv, CV_BGR2HSV);
                 cvtColor(resizedImg2, resizedImg2, COLOR_BGR2GRAY);
-                equalizeHist(resizedImg2, obj_frame); //equalize greyscale histogram
+                equalizeHist(resizedImg2, obj_frame); // Equalize greyscale histogram
 
                 //==============================
                 // CHECK STAGES
                 //==============================
 
-                cout << "Stage " << stage << endl << flush;
+                cout << "Stage " << stage << endl
+                     << flush;
 
                 //==================== CODE FOR STAGE 0
                 if (stage == 0)
                 {
+                    // Haar cascade functions.
                     vector<Rect> stopSigns;
                     stopSigns_cascade.detectMultiScale(obj_frame, stopSigns);
+
+                    // Number of detected objects. In our case we only care if the value is 0 or non-0, since there is only 1 stop sign.
                     size_t nStopSigns = stopSigns.size();
+
+                    // Trackers for average objects detected.
                     objectsCounted += (double)nStopSigns;
                     framesCounted++;
 
+                    // If objects are detected, draw an ellipse around them on the frames.
                     if (nStopSigns != 0)
                     {
                         for (size_t i = 0; i < nStopSigns; i++)
@@ -184,23 +197,31 @@ int32_t main(int32_t argc, char **argv)
                         }
                     }
 
+                    // For every 5th frame, we get the average number of objects detected of the 5 last frames.
+                    // This is because the classifier may not be 100% reliable.
                     if (framesCounted >= 5)
                     {
                         int avgObjects = int((objectsCounted / 5) + 0.5);
                         cout << "Average objects detected of last 5 frames: " << avgObjects << endl;
+                        // Reset the trackers for the frames and objects.
                         framesCounted = 0;
                         objectsCounted = 0;
 
+                        // If average is >= 1, stop sign is present, else it is not (false).
                         stopSignPresent = (0 < avgObjects) ? true : false;
                         if (stopSignPresent)
                         {
+                            // Register that the stop sign has ever been detected.
                             stopSignDetected = true;
                         }
+                        // If stop sign is present and detected we tell the delegator that we are approaching the intersection but not yet reacched it.
                         if (stopSignPresent && stopSignDetected)
                         {
                             signStatus.detected(true);
                             signStatus.reached(false);
                         }
+                        // If stop sign is not present but betected, we tell the delegator that have reached the intersection.
+                        // In other words we are standing next to the stop sign.
                         else if (!stopSignPresent && stopSignDetected)
                         {
                             signStatus.detected(false);
@@ -216,6 +237,7 @@ int32_t main(int32_t argc, char **argv)
                 //==================== CODE FOR STAGE 2
                 if (stage == 1)
                 {
+                    // The logic described above applies to the following object-detection section as well.
                     //==============================
                     // OBJECT DETECTION
                     //==============================
@@ -264,6 +286,7 @@ int32_t main(int32_t argc, char **argv)
                     //cout << "Stop sign present: " << stopSignPresent << "| Stop sign detected: " << stopSignDetected << flush << endl;
                     //==============================
 
+                    // Color detection setup.
                     car_contours = getContours(img_hsv, car_low, car_high);
                     car_polygons.resize(car_contours.size());
                     car_rectangle.resize(car_contours.size());
@@ -275,16 +298,12 @@ int32_t main(int32_t argc, char **argv)
                         if (arcLength(car_contours[k], false) > 40)
                         {
                             car_rectangle[k] = boundingRect(car_polygons[k]);
-                            //printRectangleLocation(car_contours[k], resizedImg); //coordinates and position of the center of each rectangle
                             if (getCenterOfContour(car_contours[k]).x < resizedImg.size().width / 100 * 30)
                                 westCar = true;
-                            //else westCar=false;
                             if (getCenterOfContour(car_contours[k]).x >= resizedImg.size().width / 100 * 30 && getCenterOfContour(car_contours[k]).x <= resizedImg.size().width / 100 * 55)
                                 northCar = true;
-                            //else northCar=false;
                             if (getCenterOfContour(car_contours[k]).x > resizedImg.size().width / 100 * 65)
                                 eastCar = true;
-                            //else eastCar=false;
                         }
                         groupRectangles(car_rectangle, 3, 0.65); //group overlapping rectangles
                         drawRectangle(car_rectangle[k], resizedImg, edge);
@@ -292,6 +311,8 @@ int32_t main(int32_t argc, char **argv)
                     cout << westCar << " | " << northCar << " | " << eastCar << flush << endl;
 
                     //==================== GET AVERAGE OF COLORS DETECTED (5th frame)
+                    // In this stage, we check the first 5 frames, get the average colors/cars detected and save it to the "wasPresent" variables,
+                    // to keep track of if the cars were there before we approached the intersection.
                     colorsCountedWest += (double)westCar;
                     colorsCountedNorth += (double)northCar;
                     colorsCountedEast += (double)eastCar;
@@ -322,6 +343,9 @@ int32_t main(int32_t argc, char **argv)
                 }
 
                 //==================== CODE FOR STAGE 2
+                // In this stage we use the same logic as in stage 1 for color detection, with the exception that we now need to continually check the frames.
+                // not just the 5 first frames.
+                // But we only send the data to the delegator if they were present during stage 1, since if they were not, it means that we have priority over them in the queue.
                 else if (stage == 2)
                 {
                     car_contours = getContours(img_hsv, car_low, car_high);

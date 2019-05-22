@@ -125,7 +125,7 @@ int32_t main(int32_t argc, char **argv)
                     colorsCountedEast = 0;
                     framesCountedColor = 0;
                 }
-
+                //adjust the stage to what the delegator sends
                 stage = msg.stage();
             };
 
@@ -187,7 +187,7 @@ int32_t main(int32_t argc, char **argv)
                     objectsCounted += (double)nStopSigns;
                     framesCounted++;
 
-                    // If objects are detected, draw an ellipse around them on the frames.
+                    // If objects are detected, draw an ellipse around them on the displayed frame.
                     if (nStopSigns != 0)
                     {
                         for (size_t i = 0; i < nStopSigns; i++)
@@ -197,7 +197,7 @@ int32_t main(int32_t argc, char **argv)
                         }
                     }
 
-                    // For every 5th frame, we get the average number of objects detected of the 5 last frames.
+                    // For every 5th frame, get the average number of objects detected of the 5 last frames.
                     // This is because the classifier may not be 100% reliable.
                     if (framesCounted >= 5)
                     {
@@ -406,7 +406,7 @@ int32_t main(int32_t argc, char **argv)
                 if (VERBOSE)
                 {
                     imshow(sharedMemory->name().c_str(), resizedImg);
-                    //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl;
+                    //  cout << "RECIEVED -> SEMAPHORE_KEY [" << SEMAPHORE_KEY << "]" << endl; //DEBUG
                     waitKey(1);
                 }
             }
@@ -460,7 +460,7 @@ float getPercentageOfWidth(vector<Point> contour, Mat image)
     return percentage;
 }
 
-//print the location of a detected color according to its name
+//print the location of a detected color according to its name, DEBUG FUNCTION
 void printRectangleLocation(vector<Point> contour, Mat image)
 {
     float x, y, percentage = 0;

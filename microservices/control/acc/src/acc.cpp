@@ -75,8 +75,8 @@ int32_t main(int32_t argc, char **argv)
         };
 
         opendlv::proxy::PedalPositionRequest pedal; //kiwi
-        int16_t count = 0;
-        float sensor_total = 0;
+        int16_t count = 0;                          //used to average readings
+        float sensor_total = 0;                     //used to average readings
         auto get_sensor_information = [VERBOSE, DEBUG, SAFE_DISTANCE, USER_SPEED, LEFT_TRIG, FRONT_TRIG, &SEMAPHORE, &carlos_session, &SPEED, &STAGE, &pedal, &count, &sensor_total, &kiwi_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<opendlv::proxy::DistanceReading>(std::move(envelope));
@@ -92,6 +92,7 @@ int32_t main(int32_t argc, char **argv)
             {
                 if (count == 3)
                 {
+                    //average the readings recived from the sesnors
                     float sensor_average = sensor_total / 4.0;
 
                     if (DEBUG)
@@ -132,7 +133,7 @@ int32_t main(int32_t argc, char **argv)
                     collision_status.collision_warning((sensor_average < SAFE_DISTANCE) ? true : false);
                     carlos_session.send(collision_status);
 
-                    //reset sensor variables
+                    //reset counter used for measuirng averages
                     count = 0;
                     sensor_total = 0;
                 }

@@ -64,6 +64,7 @@ int32_t main(int32_t argc, char **argv)
 
             if (collision_warning)
             {
+                //if the car recives collision warnings, it locks down the other microservices fron sending instructions to the car
                 services.semaphore(LOCK);
                 carlos_session.send(services);
             }
@@ -86,6 +87,7 @@ int32_t main(int32_t argc, char **argv)
             /*store speed and front_sensor value from acc microservice*/
             lead_car_coc = msg.coc();
             lead_car_area = msg.area();
+            //(this feature was discarded but can be brought back up if needed.)
         };
 
         bool sign_detected = false, sign_reached = false; //object service
@@ -121,8 +123,8 @@ int32_t main(int32_t argc, char **argv)
             }
         };
 
-        bool front_trigger = false, left_trigger = false;                                                               //acc service (triggers)
-        bool north_stage1 = false, east_stage1 = false, west_stage1 = false, north_stage2 = false, east_stage2 = false; //color service
+        bool front_trigger = false, left_trigger = false;                                                                                                                      //acc service (triggers)
+        bool north_stage1 = false, east_stage1 = false, west_stage1 /*west_stage1 refers to the vehicle at the west lane*/ = false, north_stage2 = false, east_stage2 = false; //color service
         auto acc_trigger = [VERBOSE, ACC, &STAGE, &front_trigger, &left_trigger, &north_stage1, &east_stage1, &west_stage1, &north_stage2, &east_stage2, &services, &carlos_session](cluon::data::Envelope &&envelope) {
             /** unpack message recieved*/
             auto msg = cluon::extractMessage<carlos::acc::trigger>(std::move(envelope));
@@ -222,22 +224,26 @@ int32_t main(int32_t argc, char **argv)
             auto msg = cluon::extractMessage<carlos::cmd::turn_status>(std::move(envelope));
             /*store speed and front_sensor value from acc microservice*/
             bool command_turn_status = msg.complete();
-            west_turn = msg.west_turn();
-            north_turn = msg.north_turn();
-            east_turn = msg.east_turn();
 
-            if (command_turn_status == true)
+            if (STAGE < 3)
+            {
+                west_turn = msg.west_turn();
+                north_turn = msg.north_turn();
+                east_turn = msg.east_turn();
+
+                if (VERBOSE)
+                {
+                    std::cout << "STAGE(" + std::to_string(STAGE) + "): inbox-> direction sign[West turn: " + std::to_string(west_turn) + ", North turn: " + std::to_string(north_turn) + ",East turn: " + std::to_string(east_turn) << "]" << std::endl;
+                }
+            }
+
+            if (command_turn_status == true && STAGE == 3)
             {
                 STAGE = 0;
                 if (VERBOSE || CMD)
                 {
                     std::cout << "stage(" + std::to_string(STAGE) + ") inbox-> cmd[Intersetion Complete]" << std::endl;
                 }
-            }
-
-            if (VERBOSE)
-            {
-                std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(west_turn) + ", North turn: " + std::to_string(north_turn) + ",East turn: " + std::to_string(east_turn) << std::endl;
             }
         };
 
@@ -251,10 +257,10 @@ int32_t main(int32_t argc, char **argv)
 
         while (carlos_session.isRunning())
         {
-            /* just run this microservice until ist crashes */
+            /* just run this microservice until it crashes */
             //send messages
             carlos_session.send(services);
-            /*send stage and semaphore data all the time for micro-services that jump into a session at any time*/
+            /*send stage and semaphore data constantly for micro-services that jump into a session at any time*/
         }
     }
     else

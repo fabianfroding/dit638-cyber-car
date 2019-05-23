@@ -33,7 +33,7 @@ int32_t main(int32_t argc, char **argv)
     const uint16_t CID_SESSION{(commandlineArguments.count("cid") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["cid"])) : static_cast<uint16_t>(112)};
     const float TURN{(commandlineArguments.count("turn") != 0) ? static_cast<float>(std::stof(commandlineArguments["turn"])) : static_cast<float>(0.2)};
     const float SPEED{(commandlineArguments.count("speed") != 0) ? static_cast<float>(std::stof(commandlineArguments["speed"])) : static_cast<float>(0.14)};
-    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(3000)};
+    const uint16_t DELAY{(commandlineArguments.count("delay") != 0) ? static_cast<uint16_t>(std::stof(commandlineArguments["delay"])) : static_cast<uint16_t>(5000)};
     const bool VERBOSE{commandlineArguments.count("verbose") != 0};
     const bool DEBUG{commandlineArguments.count("debug") != 0};
 
@@ -77,10 +77,11 @@ int32_t main(int32_t argc, char **argv)
                 std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
             }
         };
-
+        /*registers callbacks*/
         carlos_session.dataTrigger(carlos::status::ID(), get_status);
         carlos_session.dataTrigger(carlos::cmd::turn_status::ID(), turn_status);
 
+        /*assign messages used from .odvd to variables*/
         opendlv::proxy::GroundSteeringRequest wheel; //[car] groundSteering
         opendlv::proxy::PedalPositionRequest pedal;  //[car] pedal position
         carlos::cmd::turn_status intersection_turn_status;
@@ -89,6 +90,7 @@ int32_t main(int32_t argc, char **argv)
 
         while (kiwi_session.isRunning())
         {
+            /*when the status of the intersection reaches stage 3, or when debugging*/
             if (STAGE == 3 || DEBUG)
             {
                 std::cout << "STAGE(" + std::to_string(STAGE) + "): West turn: " + std::to_string(turn_west) + ", North turn: " + std::to_string(turn_north) + ",East turn: " + std::to_string(turn_east) << std::endl;
@@ -109,15 +111,18 @@ int32_t main(int32_t argc, char **argv)
                     {
                         std::cout << "West lane engaged" << std::endl;
                         //turn wheel
+                        //when debugging, use the values from the commandline 
                         if (DEBUG)
                         {
                             wheel.groundSteering(TURN);
                         }
+                        //otherwise, use the magic numbers below to perform the turn
                         else
                         {
                             wheel.groundSteering(0.14);
                         }
-
+                        /*this microservice won't be able to send the command directly 
+                            to the car unless the semaphore is unlocked by the delegator*/
                         if (SEMAPHORE)
                         {
                             kiwi_session.send(wheel);
@@ -245,6 +250,7 @@ int32_t main(int32_t argc, char **argv)
                     }
                     else
                     {
+                        //printing message in case the turn is blocked
                         std::cout << "you are not allowed to turn east" << std::endl;
                     }
                     break;
